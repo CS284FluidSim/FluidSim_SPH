@@ -1,0 +1,143 @@
+<p><link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet"></p>
+
+<style>
+body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Source Sans Pro', sans-serif;
+    text-align: center
+}
+img {
+    display: block;
+    max-width: 800px;
+    margin: 0 auto;
+}
+figcaption {
+    text-align: center;
+}
+table {
+    margin: 0 auto;
+    border-collapse: collapse;
+    text-align: center;
+}
+th, thead + tbody td {
+    border: 1px solid black;
+    padding: 0 1em;
+}
+td > * {
+    width: 100%;
+}
+</style>
+
+<p><script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML'></script></p>
+
+<h1 id="cs284a:computergraphicsandimagingspring2018">CS 284A: Computer Graphics and Imaging, Spring 2018</h1>
+
+<h2 id="finalprojectproposal:">Final Project Proposal:</h2>
+
+<h2 id="acceleratingfluidsimulation">Accelerating Fluid Simulation</h2>
+
+<h4 id="chu-mingchang3033157870kuanlu3033156752rongbingzhou3033157519">Chu-Ming Chang 3033157870, KUAN LU 3033156752, Rongbing Zhou 3033157519</h4>
+
+<p><br><br></p>
+
+<table>
+  <tr>
+    <td>
+      <img align="left" src="images/goal.jpg" width = "480"/>
+      <figcaption align="middle"></figcaption>
+    </td>
+</tr>
+</table>
+
+<h2 id="summary">Summary</h2>
+
+<p>In this project, we are trying to accelerate fluid simulation algorithm based on Position Based Dynamics (PBD) using GPU. Smoothed particle hydrodynamics (SPH) will be used for simulating the fluid as particles, and surfaces will be reconstructed and rendered from particles.</p>
+
+<h2 id="parti:problemdescription">Part I: Problem Description</h2>
+
+<p>Fluid simulation is popularly used in animation, film, etc, and it has been a hot researching area in computer graphics. There are several ways to solve this problem, one of which is Position Based Dynamics (PBD). By using Smoothed Particle Hydrodynamics (SPH), we consider the fluid as the combination of particles, which interactive with each other by exerting pressure, viscosity force and surface tension. The conerstone of SPH algorithm is numerical approximation of the Navier-Stroke equation, and to get a realistic simulation, the algorithm requires the system to have tens of thousands of particles and calculate position as well as acceleration for each particle at each timestep, which is very computaionally expensive and poses great difficulty for real-time applications. We would like to accelerate the simulation from both the alorithm and the computation platform. For the algorithm, we plan to Implement (WCSPH) or (PCISPH), while for computation platfrom, we will use CUDA for parallel execution on GPU.</p>
+
+<table>
+  <tr>
+    <td>
+      <img align="left" src="images/cpu_sim.png" width = "480"/>
+      <figcaption align="middle"></figcaption>
+    </td>
+</tr>
+</table>
+
+<h2 id="partii:goalsanddeliverables">Part II: Goals and Deliverables</h2>
+
+<p>In this project, we aim to develop a real-time fluid simulation and rendering framework using GPU, the goals are as follows:
+Planned goals:</p>
+
+<ol>
+<li>Implement basic Smoothed Particle Hydrodynamics algorithm on CPU (10 fps for 50,000 particles).</li>
+<li>Implement WCSPH or PCISPH for lower time complexity (20 fps for 50,000 particles).</li>
+<li>Implement the above algorithms on GPU using CUDA (60 fps for 50,000 particles).</li>
+<li>Fluid surface reconstruction and rendering using marching cube on GPU.</li>
+<li>Basic interation: viewpoint changing, adding fluid, static object to the scene, changing the parameter of the simulation and switching between CPU and GPU simulation.</li>
+</ol>
+
+<p>Hoped Goals</p>
+
+<ol>
+<li>Implement adaptive sampling for timestep and space to further accelerate the SPH simulation.</li>
+<li>Realistic rendering of the fluid, simulate the foam/spray of sea water.</li>
+<li>Advanced Interaction with non-static rigid objects in the scene, for example, water breaks down a dam.</li>
+</ol>
+
+<h2 id="partiii:schedule">Part III: Schedule</h2>
+
+<table>
+<colgroup>
+<col />
+<col />
+</colgroup>
+
+<thead>
+<tr>
+	<th> Date </th>
+	<th> Goal </th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+	<td> 4/2 - 4/9 </td>
+	<td> Literature survey, CPU SPH implmentation </td>
+</tr>
+<tr>
+	<td> 4/9 - 4/16</td>
+	<td> GPU SPH implementation and PCISPH implmentaion </td>
+</tr>
+<tr>
+	<td> 4/16 - 4/23</td>
+	<td> GPU PCISPH implementation and surface reconstuction </td>
+</tr>
+<tr>
+	<td> 4/23 - 4/30</td>
+	<td> Rendering and Interaction </td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="partiv:resources">Part IV: Resources</h2>
+
+<ul>
+<li>Liu, M. B., and G. R. Liu. &#8220;Smoothed particle hydrodynamics (SPH): an overview and recent developments.&#8221; Archives of computational methods in engineering 17.1 (2010): 25&#8211;76.</li>
+<li>Macklin, Miles, and Matthias Müller. &#8220;Position based fluids.&#8221; ACM Transactions on Graphics (TOG) 32.4 (2013): 104.</li>
+<li>Bridson, Robert. Fluid simulation for computer graphics. AK Peters/CRC Press, 2008.</li>
+<li>Bridson, Robert, and Matthias Müller-Fischer. &#8220;Fluid simulation: SIGGRAPH 2007 course notes Video files associated with this course are available from the citation page.&#8221; ACM SIGGRAPH 2007 courses. ACM, 2007.</li>
+<li>Bender, Jan, Matthias Müller, and Miles Macklin. &#8220;Position-Based Simulation Methods in Computer Graphics.&#8221; Eurographics (Tutorials). 2015.</li>
+<li>Bender, Jan, et al. &#8220;A survey on position‐based simulation methods in computer graphics.&#8221; Computer graphics forum. Vol. 33. No. 6. 2014.</li>
+<li>Yu, Jihun, and Greg Turk. &#8220;Reconstructing surfaces of particle-based fluids using anisotropic kernels.&#8221; ACM Transactions on Graphics (TOG) 32.1 (2013): 5.</li>
+</ul>
