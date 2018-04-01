@@ -1,48 +1,3 @@
-<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
-
-
-
-<style>
-body {
-    padding: 100px;
-    width: 1000px;
-    margin: auto;
-    text-align: left;
-    font-weight: 300;
-    font-family: 'Open Sans', sans-serif;
-    color: #121212;
-}
-h1, h2, h3, h4, h5, h6 {
-    font-family: 'Source Sans Pro', sans-serif;
-    text-align: center
-}
-img {
-    display: block;
-    max-width: 800px;
-    margin: 0 auto;
-}
-figcaption {
-    text-align: center;
-}
-table {
-    margin: 0 auto;
-    border-collapse: collapse;
-    text-align: center;
-}
-th, thead + tbody td {
-    border: 1px solid black;
-    padding: 0 1em;
-}
-td > * {
-    width: 100%;
-}
-</style>
-
-
-
-<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML'></script>
-
-
 # CS 284A: Computer Graphics and Imaging, Spring 2018
 
 ## Final Project Proposal:
@@ -57,7 +12,7 @@ td > * {
 <table>
   <tr>
     <td>
-      <img align="left" src="images/goal.jpg" width = "480"/>
+      <img align="left" src="docs/images/goal.jpg" width = "480"/>
       <figcaption align="middle"></figcaption>
     </td>
 </tr>
@@ -74,7 +29,7 @@ Fluid simulation is popularly used in animation, film, etc, and it has been a ho
 <table>
   <tr>
     <td>
-      <img align="left" src="images/cpu_sim.png" width = "480"/>
+      <img align="left" src="docs/images/cpu_sim.png" width = "480"/>
       <figcaption align="middle"></figcaption>
     </td>
 </tr>
