@@ -1,7 +1,6 @@
 #ifndef _FLUIDSIM_TIMER_H_
 #define _FLUIDSIM_TIMER_H_
 
-#include <windows.h>
 
 namespace FluidSim {
 	class Timer
