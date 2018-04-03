@@ -1,8 +1,15 @@
-
 #include "fluidsim_timer.h"
+#ifdef BUILD_CUDA
+#include "fluidsim_system_gpu.cuh"
+#else
 #include "fluidsim_system.h"
+#include <eigen3\Eigen\Dense>
+#endif
 #include <GL\glew.h>
 #include <GL\freeglut.h>
+
+#include <fstream>
+#include <iostream>
 
 #pragma comment(lib, "glew32.lib") 
 
@@ -15,8 +22,8 @@ GLuint v;
 GLuint f;
 GLuint p;
 
-float window_width = 1000;
-float window_height = 1000;
+float window_width = 500;
+float window_height = 500;
 
 float xRot = 15.0f;
 float yRot = 0.0f;
@@ -30,10 +37,15 @@ int buttonState;
 float xRotLength = 0.0f;
 float yRotLength = 0.0f;
 
+#ifdef BUILD_CUDA
+float3 real_world_origin;
+float3 real_world_side;
+float3 sim_ratio;
+#else
 Vector3f real_world_origin;
 Vector3f real_world_side;
 Vector3f sim_ratio;
-
+#endif
 float world_width;
 float world_height;
 float world_length;
@@ -116,7 +128,7 @@ void set_shaders()
 void draw_box(float ox, float oy, float oz, float width, float height, float length)
 {
 	glLineWidth(1.0f);
-	glColor3f(1.0f, 0.0f, 0.0f);
+	glColor3f(1.0f, 1.0f, 1.0f);
 
 	glBegin(GL_LINES);
 
@@ -161,6 +173,18 @@ void draw_box(float ox, float oy, float oz, float width, float height, float len
 
 void init_sph_system()
 {
+	simsystem = new FluidSim::SimulateSystem();
+#ifdef BUILD_CUDA
+	real_world_origin.x = -10.0f;
+	real_world_origin.y = -10.0f;
+	real_world_origin.z = -10.0f;
+
+	real_world_side.x = 20.0f;
+	real_world_side.y = 20.0f;
+	real_world_side.z = 20.0f;
+
+	simsystem->add_cube_fluid(make_float3(0.f, 0.f, 0.f), make_float3(0.6f, 0.6f, 0.6f));
+#else
 	real_world_origin(0) = -10.0f;
 	real_world_origin(1) = -10.0f;
 	real_world_origin(2) = -10.0f;
@@ -169,9 +193,8 @@ void init_sph_system()
 	real_world_side(1) = 20.0f;
 	real_world_side(2) = 20.0f;
 
-	simsystem = new FluidSim::SimulateSystem();
 	simsystem->add_cube_fluid(Vector3f(0.f,0.f,0.f), Vector3f(0.6f, 0.6f, 0.6f));
-
+#endif
 	timer = new FluidSim::Timer();
 	window_title = (char *)malloc(sizeof(char) * 50);
 }
@@ -193,10 +216,17 @@ void init()
 
 void init_ratio()
 {
+#ifdef BUILD_CUDA
+	float3 world_size = simsystem->get_world_size();
+	sim_ratio.x = real_world_side.x / world_size.x;
+	sim_ratio.y = real_world_side.y / world_size.y;
+	sim_ratio.z = real_world_side.z / world_size.z;
+#else
 	Vector3f world_size = simsystem->get_world_size();
 	sim_ratio(0) = real_world_side(0) / world_size(0);
 	sim_ratio(1) = real_world_side(1) / world_size(1);
 	sim_ratio(2) = real_world_side(2) / world_size(2);
+#endif
 }
 
 void render_particles()
@@ -204,17 +234,33 @@ void render_particles()
 	glPointSize(1.0f);
 	glColor3f(0.2f, 0.2f, 1.0f);
 
-	Vector3f blue(0.2f, 0.2f, 1.0f);
+#ifdef BUILD_CUDA
+	float3 color;
+	float3 pos;
+#else
+	Vector3f color;
+	Vector3f pos;
+#endif
 
 	FluidSim::Particle *particles = simsystem->get_particles();
 
 	for (unsigned int i = 0; i<simsystem->get_num_particles(); i++)
 	{
-		Vector3f color = particles[i].vel*10;
+#ifdef BUILD_CUDA
+		color = make_float3(particles[i].vel.x*10.f, particles[i].vel.y*10.f, particles[i].vel.z*10.f);
+		glColor3f(color.x, color.y, color.z);
+		glBegin(GL_POINTS);
+		pos.x = particles[i].pos.x*sim_ratio.x + real_world_origin.x;
+		pos.y = particles[i].pos.y*sim_ratio.y + real_world_origin.y;
+		pos.z = particles[i].pos.z*sim_ratio.z + real_world_origin.z;
+		glVertex3f(pos.x, pos.y, pos.z);
+#else
+		color = particles[i].vel*10.f;
 		glColor3f(color(0), color(1), color(2));
 		glBegin(GL_POINTS);
-		Vector3f pos = particles[i].pos.cwiseProduct(sim_ratio) + real_world_origin;
-		glVertex3f(pos(0),pos(1),pos(2));
+		pos = particles[i].pos.cwiseProduct(sim_ratio) + real_world_origin;
+		glVertex3f(pos(0), pos(1), pos(2));
+#endif
 		glEnd();
 	}
 }
@@ -223,7 +269,7 @@ void display_func()
 {
 	glEnable(GL_POINT_SMOOTH);
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glPushMatrix();
@@ -244,8 +290,11 @@ void display_func()
 	render_particles();
 
 	glUseProgram(0);
+#if BUILD_CUDA
+	draw_box(real_world_origin.x, real_world_origin.y, real_world_origin.z, real_world_side.x, real_world_side.y, real_world_side.z);
+#else
 	draw_box(real_world_origin(0), real_world_origin(1), real_world_origin(2), real_world_side(0), real_world_side(1), real_world_side(2));
-
+#endif
 	glPopMatrix();
 
 	glutSwapBuffers();
