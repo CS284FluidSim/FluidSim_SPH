@@ -30,6 +30,7 @@ float yRot = 0.0f;
 float xTrans = 0.0;
 float yTrans = 0;
 float zTrans = -35.0;
+int render_mode = 0;
 
 int ox;
 int oy;
@@ -64,7 +65,7 @@ void set_shaders()
 	char c;
 	int count;
 
-	fp = fopen("F:/VisualStudioProjects/FluidSimulation/FluidSim_SPH/Shader/shader.vs", "r");
+	fp = fopen("../Shader/shader.vs", "r");
 	count = 0;
 	while ((c = fgetc(fp)) != EOF)
 	{
@@ -73,7 +74,7 @@ void set_shaders()
 	}
 	fclose(fp);
 
-	fp = fopen("F:/VisualStudioProjects/FluidSimulation/FluidSim_SPH/Shader/shader.fs", "r");
+	fp = fopen("../Shader/shader.fs", "r");
 	count = 0;
 	while ((c = fgetc(fp)) != EOF)
 	{
@@ -193,7 +194,7 @@ void init_sph_system()
 	real_world_side(1) = 20.0f;
 	real_world_side(2) = 20.0f;
 
-	simsystem->add_cube_fluid(Vector3f(0.f,0.f,0.f), Vector3f(0.6f, 0.6f, 0.6f));
+	simsystem->add_cube_fluid(Vector3f(0.f,0.f,0.f), Vector3f(0.6f, 0.9f, 0.6f));
 #endif
 	timer = new FluidSim::Timer();
 	window_title = (char *)malloc(sizeof(char) * 50);
@@ -217,7 +218,7 @@ void init()
 void init_ratio()
 {
 #ifdef BUILD_CUDA
-	float3 world_size = simsystem->get_world_size();
+	float3 world_size = simsystem->get_sys_pararm()->world_size;
 	sim_ratio.x = real_world_side.x / world_size.x;
 	sim_ratio.y = real_world_side.y / world_size.y;
 	sim_ratio.z = real_world_side.z / world_size.z;
@@ -235,7 +236,7 @@ void render_particles()
 	glColor3f(0.2f, 0.2f, 1.0f);
 
 #ifdef BUILD_CUDA
-	float3 color;
+	float3 color = make_float3(0.2f,0.2f,1.0f);
 	float3 pos;
 #else
 	Vector3f color;
@@ -244,11 +245,29 @@ void render_particles()
 
 	FluidSim::Particle *particles = simsystem->get_particles();
 
-	for (unsigned int i = 0; i<simsystem->get_num_particles(); i++)
+	for (unsigned int i = 0; i<simsystem->get_sys_pararm()->num_particles; i++)
 	{
 #ifdef BUILD_CUDA
-		color = make_float3(particles[i].vel.x*10.f, particles[i].vel.y*10.f, particles[i].vel.z*10.f);
-		glColor3f(color.x, color.y, color.z);
+		if (render_mode == 0)
+		{
+			if (particles[i].surf_norm > simsystem->get_sys_pararm()->surf_norm)
+			{
+				glColor3f(1.0f, 0.0f, 0.0f);
+			}
+			else
+			{
+				glColor3f(0.2f, 1.0f, 0.2f);
+			}
+		}
+		else if (render_mode == 1)
+		{
+			glColor3f(0.2f, 0.2f, 1.0f);
+		}
+		else
+		{
+			float3 vel = particles[i].vel;
+			glColor3f(vel.x*10.f, vel.y*10.f, vel.z*10.f);
+		}
 		glBegin(GL_POINTS);
 		pos.x = particles[i].pos.x*sim_ratio.x + real_world_origin.x;
 		pos.y = particles[i].pos.y*sim_ratio.y + real_world_origin.y;
@@ -361,6 +380,11 @@ void keyboard_func(unsigned char key, int x, int y)
 	if (key == 'e')
 	{
 		yTrans += 0.3f;
+	}
+
+	if (key == 'c')
+	{
+		render_mode = (render_mode + 1) % 3;
 	}
 
 	glutPostRedisplay();

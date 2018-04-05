@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 project(FluidSim_SPH)
 
-option(BUILD_CUDA "Build with cuda support" on)
+option(BUILD_CUDA "Build with CUDA support" on)
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++11")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ox")
 endif()
 

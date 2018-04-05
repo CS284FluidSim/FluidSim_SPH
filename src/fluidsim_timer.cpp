@@ -1,4 +1,5 @@
 #include "fluidsim_timer.h"
+#include <Windows.h>
 
 namespace FluidSim {
 	Timer::Timer()
