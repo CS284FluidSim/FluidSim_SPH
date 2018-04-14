@@ -184,7 +184,7 @@ void init_sph_system()
 	real_world_side.y = 20.0f;
 	real_world_side.z = 20.0f;
 
-	simsystem->add_cube_fluid(make_float3(0.f, 0.f, 0.f), make_float3(0.6f, 0.6f, 0.6f));
+	simsystem->add_cube_fluid(make_float3(0.f, 0.f, 0.f), make_float3(0.6f, 0.9f, 0.6f));
 #else
 	real_world_origin(0) = -10.0f;
 	real_world_origin(1) = -10.0f;
@@ -245,12 +245,12 @@ void render_particles()
 
 	FluidSim::Particle *particles = simsystem->get_particles();
 
-	for (unsigned int i = 0; i<simsystem->get_sys_pararm()->num_particles; i++)
+	for (unsigned int i = 0; i<simsystem->get_num_particles(); i++)
 	{
 #ifdef BUILD_CUDA
 		if (render_mode == 0)
 		{
-			if (particles[i].surf_norm > simsystem->get_sys_pararm()->surf_norm)
+			if (particles[i].surf_norm <= simsystem->get_sys_pararm()->surf_norm)
 			{
 				glColor3f(1.0f, 0.0f, 0.0f);
 			}
@@ -274,8 +274,16 @@ void render_particles()
 		pos.z = particles[i].pos.z*sim_ratio.z + real_world_origin.z;
 		glVertex3f(pos.x, pos.y, pos.z);
 #else
-		color = particles[i].vel*10.f;
-		glColor3f(color(0), color(1), color(2));
+		//color = particles[i].vel*10.f;
+		//glColor3f(color(0), color(1), color(2));
+		if (particles[i].surf_norm > simsystem->get_surf_norm())
+		{
+			glColor3f(1.0f, 0.0f, 0.0f);
+		}
+		else
+		{
+			glColor3f(0.2f, 1.0f, 0.2f);
+		}
 		glBegin(GL_POINTS);
 		pos = particles[i].pos.cwiseProduct(sim_ratio) + real_world_origin;
 		glVertex3f(pos(0), pos(1), pos(2));

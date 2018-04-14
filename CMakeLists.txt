@@ -11,17 +11,31 @@ include_directories(${CMAKE_SOURCE_DIR}/include/)
 
 if(BUILD_CUDA)
 enable_language(CUDA)
-add_library(fluidsim_sph_gpu
-	${CMAKE_SOURCE_DIR}/src/fluidsim_system_gpu.cu
-	${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp)
+SET(SOURCE
+  ${CMAKE_SOURCE_DIR}/src/fluidsim_system_gpu.cu
+	${CMAKE_SOURCE_DIR}/src/fluidsim_surface_gpu.cu
+	${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp
+)
+SET(HEADERS
+	${CMAKE_SOURCE_DIR}/include/fluidsim_system_gpu.cuh
+	${CMAKE_SOURCE_DIR}/include/fluidsim_surface_gpu.cuh
+	${CMAKE_SOURCE_DIR}/include/fluidsim_timer.h
+)
+add_library(fluidsim_sph_gpu ${SOURCE} ${HEADERS})
 else()
 find_package(EIGEN3 REQUIRED)
 if(EIGEN3_FOUND)
 	message("EIGEN3 found")
 endif()
-add_library(fluidsim_sph
-	${CMAKE_SOURCE_DIR}/src/fluidsim_system.cpp
-	${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp)
+SET(SOURCE
+  ${CMAKE_SOURCE_DIR}/src/fluidsim_system.cpp
+	${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp
+)
+SET(HEADERS
+	${CMAKE_SOURCE_DIR}/include/fluidsim_system.h
+	${CMAKE_SOURCE_DIR}/include/fluidsim_timer.h
+)
+add_library(fluidsim_sph ${SOURCE} ${HEADERS})
 target_include_directories(fluidsim_sph PRIVATE ${EIGEN3_INCLUDE_DIR})
 endif()
 

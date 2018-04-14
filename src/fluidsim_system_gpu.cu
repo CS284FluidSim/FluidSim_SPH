@@ -211,13 +211,13 @@ namespace FluidSim {
 		sys_param_ = new SysParam();
 		sys_param_->num_particles = 0;
 
-		sys_param_->max_particles = 1000000;
+		sys_param_->max_particles = 30000;
 		sys_param_->kernel = 0.04f;
 		sys_param_->mass = 0.02f;
 
-		sys_param_->world_size.x = 1.28f;
-		sys_param_->world_size.y = 1.28f;
-		sys_param_->world_size.z = 1.28f;
+		sys_param_->world_size.x = 0.64f;
+		sys_param_->world_size.y = 0.64f;
+		sys_param_->world_size.z = 0.64f;
 		sys_param_->cell_size = sys_param_->kernel;
 		sys_param_->grid_size.x = (int)ceil(sys_param_->world_size.x / sys_param_->cell_size);
 		sys_param_->grid_size.y = (int)ceil(sys_param_->world_size.y / sys_param_->cell_size);
@@ -527,8 +527,7 @@ namespace FluidSim {
 					total_cell_force = total_cell_force + rel_vel*temp_force;
 
 					float temp = (-1) * dev_sys_param->grad_poly6 * V * pow(kernel2 - r2, 2);
-					grad_color.x += temp * rel_pos.x;
-					grad_color.y += temp * rel_pos.y;
+					grad_color += temp * rel_pos;
 					lplc_color += dev_sys_param->lplc_poly6 * V * (kernel2 - r2) * (r2 - 3 / 4 * (kernel2 - r2));
 				}
 			}
