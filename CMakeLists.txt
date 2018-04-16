@@ -13,12 +13,13 @@ if(BUILD_CUDA)
 enable_language(CUDA)
 SET(SOURCE
   ${CMAKE_SOURCE_DIR}/src/fluidsim_system_gpu.cu
-	${CMAKE_SOURCE_DIR}/src/fluidsim_surface_gpu.cu
+	${CMAKE_SOURCE_DIR}/src/fluidsim_marchingcube.cpp
 	${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp
 )
 SET(HEADERS
 	${CMAKE_SOURCE_DIR}/include/fluidsim_system_gpu.cuh
-	${CMAKE_SOURCE_DIR}/include/fluidsim_surface_gpu.cuh
+	${CMAKE_SOURCE_DIR}/include/fluidsim_marchingcube.h
+	${CMAKE_SOURCE_DIR}/include/fluidsim_marchingcube_list.h
 	${CMAKE_SOURCE_DIR}/include/fluidsim_timer.h
 )
 add_library(fluidsim_sph_gpu ${SOURCE} ${HEADERS})
@@ -29,10 +30,14 @@ if(EIGEN3_FOUND)
 endif()
 SET(SOURCE
   ${CMAKE_SOURCE_DIR}/src/fluidsim_system.cpp
+  ${CMAKE_SOURCE_DIR}/src/fluidsim_marchingcube.cpp
 	${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp
 )
 SET(HEADERS
-	${CMAKE_SOURCE_DIR}/include/fluidsim_system.h
+  ${CMAKE_SOURCE_DIR}/include/fluidsim_system.h
+  	${CMAKE_SOURCE_DIR}/include/fluidsim_types.h
+	${CMAKE_SOURCE_DIR}/include/fluidsim_marchingcube.h
+	${CMAKE_SOURCE_DIR}/include/fluidsim_marchingcube_list.h
 	${CMAKE_SOURCE_DIR}/include/fluidsim_timer.h
 )
 add_library(fluidsim_sph ${SOURCE} ${HEADERS})

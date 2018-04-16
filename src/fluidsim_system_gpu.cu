@@ -205,19 +205,19 @@ namespace FluidSim {
 	}
 
 	__host__
-	SimulateSystem::SimulateSystem()
+	SimulateSystem::SimulateSystem(float world_size_x, float world_size_y, float world_size_z)
 	{
 		sys_running_ = false;
 		sys_param_ = new SysParam();
 		sys_param_->num_particles = 0;
 
-		sys_param_->max_particles = 30000;
+		sys_param_->max_particles = 130000;
 		sys_param_->kernel = 0.04f;
 		sys_param_->mass = 0.02f;
 
-		sys_param_->world_size.x = 0.64f;
-		sys_param_->world_size.y = 0.64f;
-		sys_param_->world_size.z = 0.64f;
+		sys_param_->world_size.x = world_size_x;
+		sys_param_->world_size.y = world_size_y;
+		sys_param_->world_size.z = world_size_z;
 		sys_param_->cell_size = sys_param_->kernel;
 		sys_param_->grid_size.x = (int)ceil(sys_param_->world_size.x / sys_param_->cell_size);
 		sys_param_->grid_size.y = (int)ceil(sys_param_->world_size.y / sys_param_->cell_size);

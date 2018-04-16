@@ -65,7 +65,7 @@ namespace FluidSim {
 	class SimulateSystem {
 	public:
 		__host__
-			SimulateSystem();
+			SimulateSystem(float world_size_x, float world_size_y, float world_size_z);
 		__host__
 			~SimulateSystem();
 		__host__
@@ -83,6 +83,12 @@ namespace FluidSim {
 			SysParam *get_sys_pararm() {
 			return sys_param_;
 		}
+
+		__host__
+			int get_num_particles() {
+			return sys_param_->num_particles;
+		}
+
 		__host__
 			Particle *get_particles() {
 			return particles_;

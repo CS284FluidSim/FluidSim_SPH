@@ -1,8 +1,10 @@
 #include "fluidsim_timer.h"
 #ifdef BUILD_CUDA
 #include "fluidsim_system_gpu.cuh"
+#include "fluidsim_marchingcube.h"
 #else
 #include "fluidsim_system.h"
+#include "fluidsim_types.h"
 #include <eigen3\Eigen\Dense>
 #endif
 #include <GL\glew.h>
@@ -14,7 +16,7 @@
 #pragma comment(lib, "glew32.lib") 
 
 FluidSim::SimulateSystem *simsystem;
-
+FluidSim::MarchingCube *marchingcube;
 FluidSim::Timer *timer;
 char *window_title;
 
@@ -38,15 +40,31 @@ int buttonState;
 float xRotLength = 0.0f;
 float yRotLength = 0.0f;
 
+float world_size = 0.64f;
+
+float vox_size = 0.01f;
+int row_vox = world_size / vox_size;
+int col_vox = world_size / vox_size;
+int len_vox = world_size / vox_size;
+
+float light_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+float light_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+float light_position[] = { -10.0f, -10.0f, -10.0f, 1.0f };
+
+
 #ifdef BUILD_CUDA
+float3* model_vox;
 float3 real_world_origin;
 float3 real_world_side;
 float3 sim_ratio;
 #else
+FluidSim::float3* model_vox;
 Vector3f real_world_origin;
 Vector3f real_world_side;
 Vector3f sim_ratio;
 #endif
+float *model_scalar;
+
 float world_width;
 float world_height;
 float world_length;
@@ -174,7 +192,7 @@ void draw_box(float ox, float oy, float oz, float width, float height, float len
 
 void init_sph_system()
 {
-	simsystem = new FluidSim::SimulateSystem();
+	simsystem = new FluidSim::SimulateSystem(world_size,world_size,world_size);
 #ifdef BUILD_CUDA
 	real_world_origin.x = -10.0f;
 	real_world_origin.y = -10.0f;
@@ -184,7 +202,7 @@ void init_sph_system()
 	real_world_side.y = 20.0f;
 	real_world_side.z = 20.0f;
 
-	simsystem->add_cube_fluid(make_float3(0.f, 0.f, 0.f), make_float3(0.6f, 0.9f, 0.6f));
+	simsystem->add_cube_fluid(make_float3(0.f, 0.f, 0.f), make_float3(1.0f, 0.8f, 0.2f));
 #else
 	real_world_origin(0) = -10.0f;
 	real_world_origin(1) = -10.0f;
@@ -194,10 +212,30 @@ void init_sph_system()
 	real_world_side(1) = 20.0f;
 	real_world_side(2) = 20.0f;
 
-	simsystem->add_cube_fluid(Vector3f(0.f,0.f,0.f), Vector3f(0.6f, 0.9f, 0.6f));
+	simsystem->add_cube_fluid(Vector3f(0.2f,0.2f,0.2f), Vector3f(0.8f, 0.8f, 0.8f));
 #endif
 	timer = new FluidSim::Timer();
 	window_title = (char *)malloc(sizeof(char) * 50);
+}
+
+void init_marching_cube()
+{
+	int tot_vox = row_vox*col_vox*len_vox;
+
+	model_vox = (float3 *)malloc(sizeof(float3)*row_vox*col_vox*len_vox);
+	model_scalar = (float *)malloc(sizeof(float)*row_vox*col_vox*len_vox);
+
+	float model_radius = 8.0f;
+	float3 f_sim_ratio, model_origin;
+	model_origin.x = real_world_origin.x;
+	model_origin.y = real_world_origin.y;
+	model_origin.z = real_world_origin.z;
+
+	f_sim_ratio.x = real_world_side.x / world_size;
+	f_sim_ratio.y = real_world_side.y / world_size;
+	f_sim_ratio.z = real_world_side.z / world_size;
+
+	marchingcube = new FluidSim::MarchingCube(row_vox, col_vox, len_vox, model_scalar, model_vox, f_sim_ratio, model_origin, vox_size, 0.4);
 }
 
 void init()
@@ -250,7 +288,7 @@ void render_particles()
 #ifdef BUILD_CUDA
 		if (render_mode == 0)
 		{
-			if (particles[i].surf_norm <= simsystem->get_sys_pararm()->surf_norm)
+			if (particles[i].surf_norm > simsystem->get_sys_pararm()->surf_norm)
 			{
 				glColor3f(1.0f, 0.0f, 0.0f);
 			}
@@ -278,11 +316,11 @@ void render_particles()
 		//glColor3f(color(0), color(1), color(2));
 		if (particles[i].surf_norm > simsystem->get_surf_norm())
 		{
-			glColor3f(1.0f, 0.0f, 0.0f);
+			glColor3f(fabs(particles[i].normal(0)), fabs(particles[i].normal(1)), fabs(particles[i].normal(2)));
 		}
 		else
 		{
-			glColor3f(0.2f, 1.0f, 0.2f);
+			glColor3f(0.0f, 0.0f, 0.0f);
 		}
 		glBegin(GL_POINTS);
 		pos = particles[i].pos.cwiseProduct(sim_ratio) + real_world_origin;
@@ -298,6 +336,7 @@ void display_func()
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	glPushMatrix();
 
@@ -313,10 +352,59 @@ void display_func()
 
 	simsystem->animation();
 
-	glUseProgram(p);
-	render_particles();
-
+	//glUseProgram(p);
+	//render_particles();
 	glUseProgram(0);
+
+	if (simsystem->is_running())
+	{
+		FluidSim::Particle *particles = simsystem->get_particles();
+
+		for (int count_x = 0; count_x < row_vox; count_x++)
+		{
+			for (int count_y = 0; count_y < col_vox; count_y++)
+			{
+				for (int count_z = 0; count_z < len_vox; count_z++)
+				{
+					int index = count_z*row_vox*col_vox + count_y*row_vox + count_x;
+
+					model_vox[index].x = count_x*vox_size;
+					model_vox[index].y = count_y*vox_size;
+					model_vox[index].z = count_z*vox_size;
+
+					model_scalar[index] = 0;
+				}
+			}
+		}
+
+		for (int i = 0; i < simsystem->get_num_particles(); ++i)
+		{
+			for (float x = -0.01; x <= 0.01; x+=vox_size)
+			{
+				for (float y = -0.01; y <= 0.01; y+=vox_size)
+				{
+					for (float z = -0.01; z <= 0.01; z+=vox_size)
+					{
+						if (particles[i].pos.x + x < 0 || particles[i].pos.y + y < 0 || particles[i].pos.z + z < 0
+							|| particles[i].pos.x + x > world_size || particles[i].pos.y + y > world_size || particles[i].pos.z + z > world_size)
+							continue;
+						int cell_pos_x = (particles[i].pos.x+x) / vox_size;
+						int cell_pos_y = (particles[i].pos.y+y) / vox_size;
+						int cell_pos_z = (particles[i].pos.z+z) / vox_size;
+						int index = cell_pos_z*row_vox*col_vox + cell_pos_y*row_vox + cell_pos_x;
+						model_vox[index].x = cell_pos_x*vox_size;
+						model_vox[index].y = cell_pos_y*vox_size;
+						model_vox[index].z = cell_pos_z*vox_size;
+						if (particles[i].surf_norm>simsystem->get_sys_pararm()->surf_norm)
+							model_scalar[index] = particles[i].surf_norm;
+					}
+				}
+			}
+
+		}
+		marchingcube->run();
+	}
+
 #if BUILD_CUDA
 	draw_box(real_world_origin.x, real_world_origin.y, real_world_origin.z, real_world_side.x, real_world_side.y, real_world_side.z);
 #else
@@ -440,6 +528,7 @@ int main(int argc, char **argv)
 	glutCreateWindow("SPH Fluid 3D");
 
 	init_sph_system();
+	init_marching_cube();
 	init();
 	init_ratio();
 	set_shaders();
@@ -458,5 +547,7 @@ int main(int argc, char **argv)
 
 	glutMainLoop();
 
+	delete simsystem;
+	delete marchingcube;
 	return 0;
 }

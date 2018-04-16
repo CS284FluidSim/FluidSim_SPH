@@ -4,18 +4,18 @@
 #define BOUNDARY 0.0001f
 
 namespace FluidSim {
-	SimulateSystem::SimulateSystem()
+	SimulateSystem::SimulateSystem(float world_size_x, float world_size_y, float world_size_z)
 	{
 		sys_running = false;
 		num_particles_ = 0;
 
-		max_particles_ = 30000;
+		max_particles_ = 250000;
 		kernel_ = 0.04f;
 		mass_ = 0.02f;
 
-		world_size_(0) = 0.64f;
-		world_size_(1) = 0.64f;
-		world_size_(2) = 0.64f;
+		world_size_(0) = world_size_x;
+		world_size_(1) = world_size_y;
+		world_size_(2) = world_size_z;
 		cell_size_ = kernel_;
 		grid_size_(0) = (int)ceil(world_size_(0) / cell_size_);
 		grid_size_(1) = (int)ceil(world_size_(1) / cell_size_);
@@ -34,11 +34,10 @@ namespace FluidSim {
 		surf_coef_ = 0.1f;
 
 		poly6_value_ = 315.0f / (64.0f * PI * pow(kernel_, 9));
-		spiky_value_ = -45.0f / (PI * pow(kernel_, 6));
-		visco_value_ = 45.0f / (PI * pow(kernel_, 6));
-
 		grad_poly6_ = -945 / (32 * PI * pow(kernel_, 9));
+		grad_spiky_ = -45.0f / (PI * pow(kernel_, 6));
 		lplc_poly6_ = -945 / (8 * PI * pow(kernel_, 9));
+		lplc_visco_ = 45.0f / (PI * pow(kernel_, 6));
 
 		kernel2_ = kernel_*kernel_;
 		self_dens_ = mass_*poly6_value_*pow(kernel_, 6);
@@ -96,6 +95,9 @@ namespace FluidSim {
 
 		p->dens = rest_dens_;
 		p->pres = 0.0f;
+
+		p->surf_norm = 0.f;
+		p->normal = Vector3f(0.f, 0.f, 0.f);
 
 		p->next = nullptr;
 
@@ -180,7 +182,9 @@ namespace FluidSim {
 						np = cells_[hash];
 						while (np != NULL)
 						{
+							//relative position of the particle and its neighbour particle in the cell
 							rel_pos = (np->pos - p->pos).cast<float>();
+							//length between a particle and its neighbour particle
 							r2 = rel_pos.squaredNorm();
 
 							if (r2<INF || r2 >= kernel2_)
@@ -189,15 +193,18 @@ namespace FluidSim {
 								continue;
 							}
 
-							p->dens = p->dens + mass_ * poly6_value_ * pow(kernel2_ - r2, 3);
-
+							//density
+							p->dens += mass_ * poly6_value_ * pow(kernel2_ - r2, 3);
+							//next particle in cell
 							np = np->next;
 						}
 					}
 				}
 			}
 
+			//density = rest density + density
 			p->dens = p->dens + self_dens_;
+			//tait equation to compute for pressure
 			p->pres = (pow(p->dens / rest_dens_, 7) - 1) *gas_const_;
 		}
 	}
@@ -265,14 +272,15 @@ namespace FluidSim {
 								r = sqrt(r2);
 								V = mass_ / np->dens / 2;
 								kernel_r = kernel_ - r;
-
-								pres_kernel = spiky_value_ * kernel_r * kernel_r;
+								
+								//-rij.normalized()*MASS*(pi.p + pj.p)/(2.f * pj.rho) * SPIKY_GRAD*pow(H-r,2.f);
+								pres_kernel = grad_spiky_ * kernel_r * kernel_r;
 								temp_force = V * (p->pres + np->pres) * pres_kernel;
 								p->acc -=rel_pos*temp_force / r;
 
 								rel_vel = np->ev - p->ev;
-
-								visc_kernel = visco_value_*(kernel_ - r);
+								//VISC*MASS*(pj.v - pi.v)/pj.rho * VISC_LAP*(H-r);
+								visc_kernel = lplc_visco_*(kernel_ - r);
 								temp_force = V * visc_ * visc_kernel;
 								p->acc += rel_vel*temp_force;
 
@@ -289,7 +297,7 @@ namespace FluidSim {
 
 			lplc_color += self_lplc_color_ / p->dens;
 			p->surf_norm = grad_color.norm();
-
+			p->normal = grad_color/p->surf_norm;
 			if (p->surf_norm > surf_norm_)
 			{
 				p->acc += surf_coef_ * lplc_color * grad_color / p->surf_norm;

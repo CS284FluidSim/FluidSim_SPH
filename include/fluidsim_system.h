@@ -19,13 +19,15 @@ namespace FluidSim {
 		float dens;
 		float pres;
 		float surf_norm;
+
+		Vector3f normal;
 		
 		Particle *next;
 	};
 
 	class SimulateSystem {
 	public:
-		SimulateSystem();
+		SimulateSystem(float world_size_x, float world_size_y, float world_size_z);
 		~SimulateSystem();
 		void add_cube_fluid(const Vector3f &pos_min, const Vector3f &pos_max);
 		void start();
@@ -39,8 +41,15 @@ namespace FluidSim {
 		int get_num_particles() {
 			return num_particles_;
 		}
+		float get_surf_norm() {
+			return surf_norm_;
+		}
 		Particle *get_particles() {
 			return particles_;
+		}
+
+		Particle **get_cells() {
+			return cells_;
 		}
 
 	private:
@@ -77,10 +86,10 @@ namespace FluidSim {
 		float surf_coef_;
 
 		float poly6_value_;
-		float spiky_value_;
-		float visco_value_;
 		float grad_poly6_;
+		float grad_spiky_;
 		float lplc_poly6_;
+		float lplc_visco_;
 
 		float self_dens_;
 		float self_lplc_color_;
