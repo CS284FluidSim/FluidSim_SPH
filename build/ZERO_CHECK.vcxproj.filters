@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Ironman\FluidSim_SPH\build\CMakeFiles\ba351657fc212574e7626206ee4c03af\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{06ADA3CF-0561-32AD-8722-D34092371394}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,16 @@
+﻿  main.cpp
+D:\Ironman\FluidSim_SPH\include\helper_math.h(1381): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\include\helper_math.h(1385): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\include\helper_math.h(1389): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\main.cpp(68): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(207): note: see declaration of 'fopen'
+D:\Ironman\FluidSim_SPH\src\main.cpp(77): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(207): note: see declaration of 'fopen'
+D:\Ironman\FluidSim_SPH\src\main.cpp(207): warning C4244: 'argument': conversion from 'float' to 'GLsizei', possible loss of data
+D:\Ironman\FluidSim_SPH\src\main.cpp(248): error C2039: 'get_num_particles': is not a member of 'FluidSim::SimulateSystem'
+  D:\Ironman\FluidSim_SPH\include\fluidsim_system_gpu.cuh(65): note: see declaration of 'FluidSim::SimulateSystem'
+D:\Ironman\FluidSim_SPH\src\main.cpp(323): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(1772): note: see declaration of 'sprintf'
+D:\Ironman\FluidSim_SPH\src\main.cpp(334): warning C4244: '=': conversion from 'GLint' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\main.cpp(335): warning C4244: '=': conversion from 'GLint' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\main.cpp(431): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data

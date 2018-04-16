@@ -1,0 +1,14 @@
+﻿  Building NVCC (Device) object CMakeFiles/fluidsim_sph_gpu.dir/src/Debug/fluidsim_sph_gpu_generated_fluidsim_system_gpu.cu.obj
+  fluidsim_system_gpu.cu
+  fluidsim_system_gpu.cu
+  Building Custom Rule D:/Ironman/FluidSim_SPH/CMakeLists.txt
+  CMake is re-running because D:/Ironman/FluidSim_SPH/build/CMakeFiles/generate.stamp is out-of-date.
+    the file 'D:/Ironman/FluidSim_SPH/build/CMakeFiles/fluidsim_sph_gpu.dir/src/fluidsim_sph_gpu_generated_fluidsim_system_gpu.cu.obj.depend'
+    is newer than 'D:/Ironman/FluidSim_SPH/build/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: D:/Ironman/FluidSim_SPH/build
+  fluidsim_timer.cpp
+D:\Ironman\FluidSim_SPH\src\fluidsim_timer.cpp(17): warning C4018: '>': signed/unsigned mismatch
+  fluidsim_sph_gpu.vcxproj -> D:\Ironman\FluidSim_SPH\build\Debug\fluidsim_sph_gpu.lib

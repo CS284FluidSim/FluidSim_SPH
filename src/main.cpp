@@ -3,7 +3,7 @@
 #include "fluidsim_system_gpu.cuh"
 #else
 #include "fluidsim_system.h"
-#include <eigen3\Eigen\Dense>
+#include <Eigen\Dense>
 #endif
 #include <GL\glew.h>
 #include <GL\freeglut.h>
@@ -184,7 +184,7 @@ void init_sph_system()
 	real_world_side.y = 20.0f;
 	real_world_side.z = 20.0f;
 
-	simsystem->add_cube_fluid(make_float3(0.f, 0.f, 0.f), make_float3(0.6f, 0.6f, 0.6f));
+	simsystem->add_cube_fluid(make_float3(0.f, 0.f, 0.f), make_float3(0.9f, 0.8f, 0.7f));
 #else
 	real_world_origin(0) = -10.0f;
 	real_world_origin(1) = -10.0f;
@@ -245,7 +245,7 @@ void render_particles()
 
 	FluidSim::Particle *particles = simsystem->get_particles();
 
-	for (unsigned int i = 0; i<simsystem->get_sys_pararm()->num_particles; i++)
+	for (unsigned int i = 0; i<simsystem->get_num_particles(); i++)
 	{
 #ifdef BUILD_CUDA
 		if (render_mode == 0)

@@ -1,0 +1,15 @@
+﻿  fluidsim_system.cpp
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(53): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(144): warning C4018: '<': signed/unsigned mismatch
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(149): warning C4018: '<': signed/unsigned mismatch
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(179): warning C4018: '<': signed/unsigned mismatch
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(250): warning C4018: '<': signed/unsigned mismatch
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(324): warning C4018: '<': signed/unsigned mismatch
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(416): warning C4018: '<': signed/unsigned mismatch
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(486): warning C4018: '<': signed/unsigned mismatch
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(479): warning C4101: 'pres_kernel': unreferenced local variable
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(565): warning C4018: '<': signed/unsigned mismatch
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(621): warning C4018: '<': signed/unsigned mismatch
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(694): warning C4018: '<': signed/unsigned mismatch
+D:\Ironman\FluidSim_SPH\src\fluidsim_system.cpp(692): warning C4101: 'lplc_color': unreferenced local variable
+  fluidsim_sph.vcxproj -> D:\Ironman\FluidSim_SPH\build_cpu\Debug\fluidsim_sph.lib

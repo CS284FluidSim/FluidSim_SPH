@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 using namespace Eigen;
 
 namespace FluidSim {
@@ -11,14 +11,21 @@ namespace FluidSim {
 	class Particle {
 	public:
 		unsigned int id;
+
+		float radius;
+
 		Vector3f pos;
 		Vector3f vel;
 		Vector3f acc;
 		Vector3f ev;
+		Vector3f pres_force;
 
 		float dens;
 		float pres;
 		float surf_norm;
+
+		Vector3f pred_vel;
+		Vector3f pred_pos;
 		
 		Particle *next;
 	};
@@ -50,6 +57,13 @@ namespace FluidSim {
 		void comp_force();
 		void integrate();
 
+		void init_dens();
+		void init_force();
+		void pred_vel_pos();
+		void update_dens_var_scale();
+		void predDensVar_updatePres();
+		void update_presForce();
+
 		Vector3i calc_cell_pos(Vector3f p);
 		unsigned calc_cell_hash(Vector3i cell_pos);
 
@@ -57,6 +71,8 @@ namespace FluidSim {
 		bool sys_running;
 		int max_particles_;
 		int num_particles_;
+		int minIteration;
+		int maxIteration;
 
 		Vector3f world_size_;
 		Vector3i grid_size_;
@@ -84,6 +100,12 @@ namespace FluidSim {
 
 		float self_dens_;
 		float self_lplc_color_;
+
+		float particle_radius;
+		float delta;
+		float aveDensityVariance;
+		float maxDensityVariance;
+		float densityVarianceThreshold;
 
 		Particle * particles_;
 		Particle ** cells_;

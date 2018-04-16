@@ -10,19 +10,15 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/include/)
 
 if(BUILD_CUDA)
-enable_language(CUDA)
-add_library(fluidsim_sph_gpu
+find_package(CUDA REQUIRED)
+cuda_add_library(fluidsim_sph_gpu
 	${CMAKE_SOURCE_DIR}/src/fluidsim_system_gpu.cu
 	${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp)
 else()
-find_package(EIGEN3 REQUIRED)
-if(EIGEN3_FOUND)
-	message("EIGEN3 found")
-endif()
 add_library(fluidsim_sph
 	${CMAKE_SOURCE_DIR}/src/fluidsim_system.cpp
 	${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp)
-target_include_directories(fluidsim_sph PRIVATE ${EIGEN3_INCLUDE_DIR})
+target_include_directories(fluidsim_sph PRIVATE D:/Ironman/eigen-eigen-5a0156e40feb/eigen-eigen-5a0156e40feb)
 endif()
 
 add_executable(dambreak ${CMAKE_SOURCE_DIR}/src/main.cpp)
@@ -33,11 +29,4 @@ else()
 target_link_libraries(dambreak fluidsim_sph)
 endif()
 
-if(EIGEN3_FOUND)
-else()
-	find_package(EIGEN3 REQUIRED)
-	if(EIGEN3_FOUND)
-		message("EIGEN3 found")
-	endif()
-endif()
-target_include_directories(dambreak PRIVATE ${EIGEN3_INCLUDE_DIR})
+target_include_directories(dambreak PRIVATE D:/Ironman/eigen-eigen-5a0156e40feb/eigen-eigen-5a0156e40feb)

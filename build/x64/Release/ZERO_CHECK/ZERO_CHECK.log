@@ -1,0 +1,8 @@
+﻿  Checking Build System
+  CMake is re-running because D:/Ironman/FluidSim_SPH/build/CMakeFiles/generate.stamp is out-of-date.
+    the file 'D:/Ironman/FluidSim_SPH/CMakeLists.txt'
+    is newer than 'D:/Ironman/FluidSim_SPH/build/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: D:/Ironman/FluidSim_SPH/build

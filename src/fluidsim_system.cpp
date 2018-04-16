@@ -8,6 +8,8 @@ namespace FluidSim {
 	{
 		sys_running = false;
 		num_particles_ = 0;
+		minIteration = 3;
+		maxIteration = 10000;
 
 		max_particles_ = 30000;
 		kernel_ = 0.04f;
@@ -29,7 +31,7 @@ namespace FluidSim {
 		rest_dens_ = 1000.f;
 		gas_const_ = 1.0f;
 		visc_ = 6.5f;
-		timestep_ = 0.003f;
+		timestep_ = 0.005f; // original timestep = 0.003f
 		surf_norm_ = 6.0f;
 		surf_coef_ = 0.1f;
 
@@ -46,6 +48,9 @@ namespace FluidSim {
 
 		particles_ = (Particle *)malloc(sizeof(Particle)*max_particles_);
 		cells_ = (Particle **)malloc(sizeof(Particle *)*total_cells_);
+
+		particle_radius = 0.01f;
+		densityVarianceThreshold = rest_dens_ * 0.01 * 10;
 	}
 
 	SimulateSystem::~SimulateSystem() {
@@ -84,6 +89,8 @@ namespace FluidSim {
 
 		p->id = num_particles_;
 
+		p->radius = particle_radius;
+
 		p->pos = pos;
 		p->vel = vel;
 
@@ -110,8 +117,22 @@ namespace FluidSim {
 		}
 
 		build_table();
-		comp_dens_pres();
-		comp_force();
+		//comp_dens_pres();
+		//comp_force();
+		init_dens();
+		init_force();
+
+		int iter = 0;
+		while (iter < maxIteration) {
+			pred_vel_pos();
+			update_dens_var_scale();
+			predDensVar_updatePres();
+			update_presForce();
+			if (++iter >= minIteration && maxDensityVariance < densityVarianceThreshold) {
+				break;
+			}
+		}
+
 		integrate();
 	}
 
@@ -303,9 +324,14 @@ namespace FluidSim {
 		for (unsigned int i = 0; i<num_particles_; i++)
 		{
 			p = &(particles_[i]);
-
+			
+			
 			p->vel += p->acc*timestep_ / p->dens + gravity_*timestep_;
+			// change p->dens to mass_
+			//p->vel += p->acc*timestep_ / mass_ + gravity_*timestep_;
 			p->pos += p->vel*timestep_;
+
+			
 
 			if (p->pos(0) >= world_size_(0) - BOUNDARY)
 			{
@@ -374,4 +400,340 @@ namespace FluidSim {
 			+ ((unsigned int)(cell_pos(1)))*grid_size_(0) 
 			+ (unsigned int)(cell_pos(0));
 	}
+
+	void SimulateSystem::init_dens()
+	{
+		Particle *p;
+		Particle *np;
+
+		Vector3i cell_pos;
+		Vector3i near_pos;
+		unsigned int hash;
+
+		Vector3f rel_pos;
+		float r2;
+
+		for (unsigned int i = 0; i<num_particles_; i++)
+		{
+			p = &(particles_[i]);
+			cell_pos = calc_cell_pos(p->pos);
+
+			p->dens = 0.0f;
+			//p->pres = 0.0f;
+
+			for (int x = -1; x <= 1; x++)
+			{
+				for (int y = -1; y <= 1; y++)
+				{
+					for (int z = -1; z <= 1; z++)
+					{
+						near_pos = cell_pos + Vector3i(x, y, z);
+						hash = calc_cell_hash(near_pos);
+
+						if (hash == 0xffffffff)
+						{
+							continue;
+						}
+
+						np = cells_[hash];
+						while (np != NULL)
+						{
+							rel_pos = (np->pos - p->pos).cast<float>();
+							r2 = rel_pos.squaredNorm();
+
+							if (r2<INF || r2 >= kernel2_)
+							{
+								np = np->next;
+								continue;
+							}
+
+							p->dens = p->dens + mass_ * poly6_value_ * pow(kernel2_ - r2, 3);
+
+							np = np->next;
+						}
+					}
+				}
+			}
+
+			p->dens = p->dens + self_dens_;
+		}
+	}
+
+	void SimulateSystem::init_force()
+	{
+		Particle *p;
+		Particle *np;
+
+		Vector3i cell_pos;
+		Vector3i near_pos;
+		unsigned int hash;
+
+		Vector3f rel_pos;
+		Vector3f rel_vel;
+
+		float r2;
+		float r;
+		float kernel_r;
+		float V;
+
+		float pres_kernel;
+		float visc_kernel;
+		float temp_force;
+
+		Vector3f grad_color;
+		float lplc_color;
+
+		for (unsigned int i = 0; i<num_particles_; i++)
+		{
+			p = &(particles_[i]);
+			cell_pos = calc_cell_pos(p->pos);
+
+			p->acc(0) = 0.0f;
+			p->acc(1) = 0.0f;
+			p->acc(2) = 0.0f;
+
+			grad_color(0) = 0.0f;
+			grad_color(1) = 0.0f;
+			grad_color(2) = 0.0f;
+			lplc_color = 0.0f;
+
+			for (int x = -1; x <= 1; x++)
+			{
+				for (int y = -1; y <= 1; y++)
+				{
+					for (int z = -1; z <= 1; z++)
+					{
+						near_pos = cell_pos + Vector3i(x, y, z);
+						hash = calc_cell_hash(near_pos);
+
+						if (hash == 0xffffffff)
+						{
+							continue;
+						}
+
+						np = cells_[hash];
+						while (np != NULL)
+						{
+							rel_pos = p->pos - np->pos;
+							r2 = rel_pos.squaredNorm();
+
+							if (r2 < kernel2_ && r2 > INF)
+							{
+								r = sqrt(r2);
+								V = mass_ / np->dens / 2;
+								kernel_r = kernel_ - r;
+
+								/*pres_kernel = spiky_value_ * kernel_r * kernel_r;
+								temp_force = V * (p->pres + np->pres) * pres_kernel;
+								p->acc -= rel_pos*temp_force / r;*/
+
+								rel_vel = np->ev - p->ev;
+
+								visc_kernel = visco_value_*(kernel_ - r);
+								temp_force = V * visc_ * visc_kernel;
+								p->acc += rel_vel*temp_force;
+
+								float temp = (-1) * grad_poly6_ * V * pow(kernel2_ - r2, 2);
+								grad_color += temp * rel_pos;
+								lplc_color += lplc_poly6_ * V * (kernel2_ - r2) * (r2 - 3 / 4 * (kernel2_ - r2));
+							}
+
+							np = np->next;
+						}
+					}
+				}
+			}
+
+			lplc_color += self_lplc_color_ / p->dens;
+			p->surf_norm = grad_color.norm();
+
+			if (p->surf_norm > surf_norm_)
+			{
+				p->acc += surf_coef_ * lplc_color * grad_color / p->surf_norm;
+			}
+
+			p->pres = 0.0f;
+			p->pres_force(0) = 0.f;
+			p->pres_force(1) = 0.f;
+			p->pres_force(2) = 0.f;
+		}
+	}
+
+	void SimulateSystem::pred_vel_pos()
+	{
+		Particle *p;
+		for (unsigned int i = 0; i < num_particles_; i++)
+		{
+			p = &(particles_[i]);
+
+			p->pred_vel = p->vel + (p->acc + p->pres_force) * timestep_ / p->dens + gravity_ * timestep_;
+			p->pred_pos = p->pos + p->pred_vel * timestep_;
+		}
+
+	}
+
+	void SimulateSystem::update_dens_var_scale() 
+	{
+		Vector3f gradientKernelSum = Vector3f(0.f, 0.f, 0.f);
+		float squaredGradientKernelSum = 0.f;
+
+		for (float i = -kernel_ - particle_radius; i <= kernel_ + particle_radius; i += 2.f * particle_radius)
+		{
+			for (float j = -kernel_ - particle_radius; j <= kernel_ + particle_radius; j += 2.f * particle_radius)
+			{
+				for (float k = -kernel_ - particle_radius; k <= kernel_ + particle_radius; k += 2.f * particle_radius)
+				{
+					Vector3f p = Vector3f(i, j, k);
+					float r2 = p.squaredNorm();
+					float r = std::sqrt(r2);
+					if (r2 < kernel2_)
+					{
+						Vector3f gradientKernel = grad_poly6_ * pow(kernel2_ - r2, 2) * p;
+						gradientKernelSum += gradientKernel;
+						squaredGradientKernelSum += gradientKernel.dot(gradientKernel);
+					}
+				}
+			}
+		}
+
+		float sumGradientSquared = gradientKernelSum.dot(gradientKernelSum);
+		float beta = 2.f * pow(timestep_ * mass_ / rest_dens_, 2);
+		delta = -1.f / (beta * (-sumGradientSquared - squaredGradientKernelSum));
+
+	}
+
+	void SimulateSystem::predDensVar_updatePres()
+	{
+		Particle *p;
+		Particle *np;
+
+		Vector3i cell_pos;
+		Vector3i near_pos;
+		unsigned int hash;
+
+		Vector3f rel_pos;
+		float r2;
+
+		maxDensityVariance = -INF;
+		aveDensityVariance = 0.f;
+		float accDensityVariance = 0.f;
+
+		for (unsigned int i = 0; i < num_particles_; i++)
+		{
+			p = &(particles_[i]);
+			cell_pos = calc_cell_pos(p->pos);
+
+			float density = 0.f;
+
+			for (int x = -1; x <= 1; x++)
+			{
+				for (int y = -1; y <= 1; y++)
+				{
+					for (int z = -1; z <= 1; z++)
+					{
+						near_pos = cell_pos + Vector3i(x, y, z);
+						hash = calc_cell_hash(near_pos);
+
+						if (hash == 0xffffffff)
+						{
+							continue;
+						}
+
+						np = cells_[hash];
+						while (np != NULL)
+						{
+							rel_pos = (np->pred_pos - p->pred_pos).cast<float>();
+							r2 = rel_pos.squaredNorm();
+
+							if (r2 < INF || r2 >= kernel2_)
+							{
+								np = np->next;
+								continue;
+							}
+
+							density += mass_ * poly6_value_ * pow(kernel2_ - r2, 3);
+
+							np = np->next;
+						}
+					}
+				}
+			}
+
+			float dens_var = std::max(0.f, density - rest_dens_);
+			maxDensityVariance = std::max(maxDensityVariance, dens_var);
+			accDensityVariance += dens_var;
+
+			p->pres += delta * dens_var;
+		}
+		aveDensityVariance = accDensityVariance / num_particles_;
+	}
+	
+	void SimulateSystem::update_presForce()
+	{
+		Particle *p;
+		Particle *np;
+
+		Vector3i cell_pos;
+		Vector3i near_pos;
+		unsigned int hash;
+
+		Vector3f rel_pos;
+		Vector3f rel_vel;
+
+		float r2;
+		float r;
+		float kernel_r;
+		float V;
+
+		float pres_kernel;
+		float temp_force;
+
+		Vector3f grad_color;
+		float lplc_color;
+
+		for (unsigned int i = 0; i<num_particles_; i++)
+		{
+			p = &(particles_[i]);
+			cell_pos = calc_cell_pos(p->pos);
+
+			for (int x = -1; x <= 1; x++)
+			{
+				for (int y = -1; y <= 1; y++)
+				{
+					for (int z = -1; z <= 1; z++)
+					{
+						near_pos = cell_pos + Vector3i(x, y, z);
+						hash = calc_cell_hash(near_pos);
+
+						if (hash == 0xffffffff)
+						{
+							continue;
+						}
+
+						np = cells_[hash];
+						while (np != NULL)
+						{
+							rel_pos = p->pos - np->pos;
+							r2 = rel_pos.squaredNorm();
+
+							if (r2 < kernel2_ && r2 > INF)
+							{
+								r = sqrt(r2);
+								V = mass_ / np->dens / 2;
+								kernel_r = kernel_ - r;
+
+								pres_kernel = spiky_value_ * kernel_r * kernel_r;
+								temp_force = V * (p->pres + np->pres) * pres_kernel;
+								p->pres_force = rel_pos * temp_force / r;
+								p->acc -= p->pres_force;
+
+							}
+							np = np->next;
+						}
+					}
+				}
+			}
+		}
+	}
+
 }
