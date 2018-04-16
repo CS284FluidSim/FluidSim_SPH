@@ -1,10 +1,5 @@
 #include "fluidsim_timer.h"
-#ifdef BUILD_CUDA
-#include "fluidsim_system_gpu.cuh"
-#else
 #include "fluidsim_system.h"
-#include <Eigen\Dense>
-#endif
 #include <GL\glew.h>
 #include <GL\freeglut.h>
 
@@ -13,118 +8,56 @@
 
 #pragma comment(lib, "glew32.lib") 
 
-FluidSim::SimulateSystem *simsystem;
+using namespace FluidSim;
 
-FluidSim::Timer *timer;
+namespace FluidSim
+{
+#ifndef BUILD_CUDA
+	struct float3
+	{
+		float x;
+		float y;
+		float z;
+	};
+#endif
+}
+
+
+//Somulation system global variable
+SimulateSystem *simsystem;
+Timer *timer;
+
+//OpenGL global variable
 char *window_title;
-
-GLuint v;
-GLuint f;
-GLuint p;
-
-float window_width = 500;
-float window_height = 500;
-
+float window_width = 800;
+float window_height = 800;
 float xRot = 15.0f;
 float yRot = 0.0f;
 float xTrans = 0.0;
 float yTrans = 0;
 float zTrans = -35.0;
 int render_mode = 0;
-
 int ox;
 int oy;
 int buttonState;
 float xRotLength = 0.0f;
 float yRotLength = 0.0f;
+bool pause = false;
+bool wireframe = false;
+bool step = false;
 
-#ifdef BUILD_CUDA
+//Simulation Parameters
+float world_size = 0.64f;
+float vox_size = 0.01f;
+int row_vox = world_size / vox_size;
+int col_vox = world_size / vox_size;
+int len_vox = world_size / vox_size;
+float3* model_vox;
+float *model_scalar;
 float3 real_world_origin;
 float3 real_world_side;
 float3 sim_ratio;
-#else
-Vector3f real_world_origin;
-Vector3f real_world_side;
-Vector3f sim_ratio;
-#endif
-float world_width;
-float world_height;
-float world_length;
 
-void set_shaders()
-{
-	char *vs = NULL;
-	char *fs = NULL;
-
-	vs = (char *)malloc(sizeof(char) * 10000);
-	fs = (char *)malloc(sizeof(char) * 10000);
-	memset(vs, 0, sizeof(char) * 10000);
-	memset(fs, 0, sizeof(char) * 10000);
-
-	FILE *fp;
-	char c;
-	int count;
-
-	fp = fopen("../Shader/shader.vs", "r");
-	count = 0;
-	while ((c = fgetc(fp)) != EOF)
-	{
-		vs[count] = c;
-		count++;
-	}
-	fclose(fp);
-
-	fp = fopen("../Shader/shader.fs", "r");
-	count = 0;
-	while ((c = fgetc(fp)) != EOF)
-	{
-		fs[count] = c;
-		count++;
-	}
-	fclose(fp);
-
-	v = glCreateShader(GL_VERTEX_SHADER);
-	f = glCreateShader(GL_FRAGMENT_SHADER);
-
-	const char *vv;
-	const char *ff;
-	vv = vs;
-	ff = fs;
-
-	glShaderSource(v, 1, &vv, NULL);
-	glShaderSource(f, 1, &ff, NULL);
-
-	int success;
-
-	glCompileShader(v);
-	glGetShaderiv(v, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		char info_log[5000];
-		glGetShaderInfoLog(v, 5000, NULL, info_log);
-		printf("Error in vertex shader compilation!\n");
-		printf("Info Log: %s\n", info_log);
-	}
-
-	glCompileShader(f);
-	glGetShaderiv(f, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		char info_log[5000];
-		glGetShaderInfoLog(f, 5000, NULL, info_log);
-		printf("Error in fragment shader compilation!\n");
-		printf("Info Log: %s\n", info_log);
-	}
-
-	p = glCreateProgram();
-	glAttachShader(p, v);
-	glAttachShader(p, f);
-	glLinkProgram(p);
-	glUseProgram(p);
-
-	free(vs);
-	free(fs);
-}
 
 void draw_box(float ox, float oy, float oz, float width, float height, float length)
 {
@@ -174,31 +107,17 @@ void draw_box(float ox, float oy, float oz, float width, float height, float len
 
 void init_sph_system()
 {
-	simsystem = new FluidSim::SimulateSystem();
-#ifdef BUILD_CUDA
-	real_world_origin.x = -10.0f;
-	real_world_origin.y = -10.0f;
-	real_world_origin.z = -10.0f;
+	simsystem = new FluidSim::SimulateSystem(world_size, world_size, world_size);
+	simsystem->add_cube_fluid({ 0.f, 0.f, 0.f }, { 1.0f, 0.9f, 0.3f });
 
-	real_world_side.x = 20.0f;
-	real_world_side.y = 20.0f;
-	real_world_side.z = 20.0f;
+	sim_ratio.x = real_world_side.x / world_size;
+	sim_ratio.y = real_world_side.y / world_size;
+	sim_ratio.z = real_world_side.z / world_size;
 
-	simsystem->add_cube_fluid(make_float3(0.f, 0.f, 0.f), make_float3(0.9f, 0.8f, 0.7f));
-#else
-	real_world_origin(0) = -10.0f;
-	real_world_origin(1) = -10.0f;
-	real_world_origin(2) = -10.0f;
-
-	real_world_side(0) = 20.0f;
-	real_world_side(1) = 20.0f;
-	real_world_side(2) = 20.0f;
-
-	simsystem->add_cube_fluid(Vector3f(0.f,0.f,0.f), Vector3f(0.6f, 0.9f, 0.6f));
-#endif
 	timer = new FluidSim::Timer();
 	window_title = (char *)malloc(sizeof(char) * 50);
 }
+
 
 void init()
 {
@@ -213,75 +132,57 @@ void init()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslatef(0.0f, 0.0f, -3.0f);
+
+	real_world_origin = { -10.f, -10.f, -10.f };
+	real_world_side = { 20.f, 20.f, 20.f };
 }
 
-void init_ratio()
+void render_simulation()
 {
-#ifdef BUILD_CUDA
-	float3 world_size = simsystem->get_sys_pararm()->world_size;
-	sim_ratio.x = real_world_side.x / world_size.x;
-	sim_ratio.y = real_world_side.y / world_size.y;
-	sim_ratio.z = real_world_side.z / world_size.z;
-#else
-	Vector3f world_size = simsystem->get_world_size();
-	sim_ratio(0) = real_world_side(0) / world_size(0);
-	sim_ratio(1) = real_world_side(1) / world_size(1);
-	sim_ratio(2) = real_world_side(2) / world_size(2);
-#endif
-}
-
-void render_particles()
-{
-	glPointSize(1.0f);
-	glColor3f(0.2f, 0.2f, 1.0f);
-
-#ifdef BUILD_CUDA
-	float3 color = make_float3(0.2f,0.2f,1.0f);
-	float3 pos;
-#else
-	Vector3f color;
-	Vector3f pos;
-#endif
-
-	FluidSim::Particle *particles = simsystem->get_particles();
-
-	for (unsigned int i = 0; i<simsystem->get_num_particles(); i++)
+	if (render_mode != 3)
 	{
-#ifdef BUILD_CUDA
-		if (render_mode == 0)
+		glPointSize(1.0f);
+		glColor3f(0.2f, 0.2f, 1.0f);
+
+		float3 color = { 0.2f, 0.2f, 1.0f };
+		float3 pos;
+
+		FluidSim::Particle *particles = simsystem->get_particles();
+
+		for (unsigned int i = 0; i < simsystem->get_num_particles(); i++)
 		{
-			if (particles[i].surf_norm > simsystem->get_sys_pararm()->surf_norm)
+			if (render_mode == 0)
 			{
-				glColor3f(1.0f, 0.0f, 0.0f);
+				if (particles[i].surf_norm > simsystem->get_surf_norm())
+				{
+					glColor3f(1.0f, 0.0f, 0.0f);
+				}
+				else
+				{
+					glColor3f(0.2f, 1.0f, 0.2f);
+				}
+			}
+			else if (render_mode == 1)
+			{
+				glColor3f(0.2f, 0.2f, 1.0f);
 			}
 			else
 			{
-				glColor3f(0.2f, 1.0f, 0.2f);
+				float3 vel;
+				vel.x = particles[i].vel(0);
+				vel.y = particles[i].vel(1);
+				vel.z = particles[i].vel(2);
+				glColor3f(vel.x*10.f, vel.y*10.f, vel.z*10.f);
 			}
+			glBegin(GL_POINTS);
+			pos.x = particles[i].pos(0)*sim_ratio.x + real_world_origin.x;
+			pos.y = particles[i].pos(1)*sim_ratio.y + real_world_origin.y;
+			pos.z = particles[i].pos(2)*sim_ratio.z + real_world_origin.z;
+			glVertex3f(pos.x, pos.y, pos.z);
+			glEnd();
 		}
-		else if (render_mode == 1)
-		{
-			glColor3f(0.2f, 0.2f, 1.0f);
-		}
-		else
-		{
-			float3 vel = particles[i].vel;
-			glColor3f(vel.x*10.f, vel.y*10.f, vel.z*10.f);
-		}
-		glBegin(GL_POINTS);
-		pos.x = particles[i].pos.x*sim_ratio.x + real_world_origin.x;
-		pos.y = particles[i].pos.y*sim_ratio.y + real_world_origin.y;
-		pos.z = particles[i].pos.z*sim_ratio.z + real_world_origin.z;
-		glVertex3f(pos.x, pos.y, pos.z);
-#else
-		color = particles[i].vel*10.f;
-		glColor3f(color(0), color(1), color(2));
-		glBegin(GL_POINTS);
-		pos = particles[i].pos.cwiseProduct(sim_ratio) + real_world_origin;
-		glVertex3f(pos(0), pos(1), pos(2));
-#endif
-		glEnd();
 	}
+	
 }
 
 void display_func()
@@ -303,19 +204,17 @@ void display_func()
 	glRotatef(xRot, 1.0f, 0.0f, 0.0f);
 	glRotatef(yRot, 0.0f, 1.0f, 0.0f);
 
-	simsystem->animation();
+	if (!pause || step)
+	{
+		simsystem->animation();
+		step = !step;
+	}
 
-	glUseProgram(p);
-	render_particles();
+	render_simulation();
 
-	glUseProgram(0);
-#if BUILD_CUDA
 	draw_box(real_world_origin.x, real_world_origin.y, real_world_origin.z, real_world_side.x, real_world_side.y, real_world_side.z);
-#else
-	draw_box(real_world_origin(0), real_world_origin(1), real_world_origin(2), real_world_side(0), real_world_side(1), real_world_side(2));
-#endif
-	glPopMatrix();
 
+	glPopMatrix();
 	glutSwapBuffers();
 
 	timer->update();
@@ -384,8 +283,17 @@ void keyboard_func(unsigned char key, int x, int y)
 
 	if (key == 'c')
 	{
-		render_mode = (render_mode + 1) % 3;
+		render_mode = (render_mode + 1) % 4;
 	}
+
+	if (key == 'v')
+		wireframe = !wireframe;
+
+	if (key == 'p')
+		pause = !pause;
+
+	if (key == 'n')
+		step = !step;
 
 	glutPostRedisplay();
 }
@@ -426,29 +334,23 @@ void motion_func(int x, int y)
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-	glutInitWindowPosition(0, 0);
+
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(window_width, window_height);
-	glutCreateWindow("SPH Fluid 3D");
 
-	init_sph_system();
 	init();
-	init_ratio();
-	set_shaders();
-	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
-	glEnable(GL_POINT_SPRITE_ARB);
-	glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_DEPTH_TEST);
+	init_sph_system();
 
+	(void)glutCreateWindow("GLUT Program");
 	glutDisplayFunc(display_func);
 	glutReshapeFunc(reshape_func);
-	glutKeyboardFunc(keyboard_func);
+	glutIdleFunc(idle_func);
 	glutMouseFunc(mouse_func);
 	glutMotionFunc(motion_func);
-	glutIdleFunc(idle_func);
-
+	glutKeyboardFunc(keyboard_func);
 	glutMainLoop();
 
-	return 0;
+	delete simsystem;
+
+	return EXIT_SUCCESS;
 }

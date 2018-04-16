@@ -4,7 +4,7 @@
 #define BOUNDARY 0.0001f
 
 namespace FluidSim {
-	SimulateSystem::SimulateSystem()
+	SimulateSystem::SimulateSystem(float w_x, float w_y, float w_z)
 	{
 		sys_running = false;
 		num_particles_ = 0;
@@ -15,9 +15,9 @@ namespace FluidSim {
 		kernel_ = 0.04f;
 		mass_ = 0.02f;
 
-		world_size_(0) = 0.64f;
-		world_size_(1) = 0.64f;
-		world_size_(2) = 0.64f;
+		world_size_(0) = w_x;
+		world_size_(1) = w_y;
+		world_size_(2) = w_z;
 		cell_size_ = kernel_;
 		grid_size_(0) = (int)ceil(world_size_(0) / cell_size_);
 		grid_size_(1) = (int)ceil(world_size_(1) / cell_size_);
@@ -31,7 +31,7 @@ namespace FluidSim {
 		rest_dens_ = 1000.f;
 		gas_const_ = 1.0f;
 		visc_ = 6.5f;
-		timestep_ = 0.005f; // original timestep = 0.003f
+		timestep_ = 0.001f; // original timestep = 0.003f
 		surf_norm_ = 6.0f;
 		surf_coef_ = 0.1f;
 
@@ -117,9 +117,9 @@ namespace FluidSim {
 		}
 
 		build_table();
-		//comp_dens_pres();
-		//comp_force();
-		init_dens();
+		comp_dens_pres();
+		comp_force();
+		/*init_dens();
 		init_force();
 
 		int iter = 0;
@@ -131,7 +131,7 @@ namespace FluidSim {
 			if (++iter >= minIteration && maxDensityVariance < densityVarianceThreshold) {
 				break;
 			}
-		}
+		}*/
 
 		integrate();
 	}
