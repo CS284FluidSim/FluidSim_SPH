@@ -13,8 +13,7 @@ namespace FluidSim {
 		unsigned int id;
 		Vector3f pos;
 		Vector3f vel;
-		Vector3f acc;
-		Vector3f ev;
+		Vector3f force;
 
 		float dens;
 		float pres;

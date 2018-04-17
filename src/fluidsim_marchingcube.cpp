@@ -3,6 +3,7 @@
 #include <gl/freeglut.h>
 #include <stdio.h>
 #include <iostream>
+#include <helper_math.h>
 
 namespace FluidSim {
 	MarchingCube::MarchingCube(uint _row_vox, uint _col_vox, uint _len_vox, float *_scalar, float3 *_pos, float3 _sim_ratio, float3 _origin, float _step, float _isovalue)
@@ -16,6 +17,7 @@ namespace FluidSim {
 		pos = _pos;
 		origin = _origin;
 		sim_ratio = _sim_ratio;
+		step = _step;
 
 		isovalue = _isovalue;
 
@@ -43,13 +45,13 @@ namespace FluidSim {
 		float3 edge_vertex[12];
 		float3 edge_norm[12];
 
-		uint global_index;
-		uint index;
-		uint prev;
-		uint next;
-		uint x;
-		uint y;
-		uint z;
+		uint global_index = 0;
+		uint index = 0;
+		uint prev = 0;
+		uint next = 0;
+		uint x = 0;
+		uint y = 0;
+		uint z = 0;
 
 		int flag_index;
 		int edge_flags;
@@ -120,7 +122,6 @@ namespace FluidSim {
 					}
 
 					float norm = -sqrt(normal[global_index].x*normal[global_index].x + normal[global_index].y*normal[global_index].y + normal[global_index].z*normal[global_index].z);
-
 					if (norm == 0.0f)
 					{
 						normal[global_index].x = 0.0f;
@@ -184,7 +185,8 @@ namespace FluidSim {
 
 							edge_norm[count].x = cube_norm[edge_conn[count][0]].x + (cube_norm[edge_conn[count][1]].x - cube_norm[edge_conn[count][0]].x) * diff;
 							edge_norm[count].y = cube_norm[edge_conn[count][0]].y + (cube_norm[edge_conn[count][1]].y - cube_norm[edge_conn[count][0]].y) * diff;
-							edge_norm[count].z = cube_norm[edge_conn[count][0]].z + (cube_norm[edge_conn[count][1]].z - cube_norm[edge_conn[count][0]].z) * diff;
+							edge_norm[count].z = cube_norm[edge_conn[count][0]].z + (cube_norm[edge_conn[count][1]].z - cube_norm[edge_conn[count][0]].z) * diff;							
+							
 						}
 					}
 
@@ -199,12 +201,10 @@ namespace FluidSim {
 						for (uint count_point = 0; count_point < 3; count_point++)
 						{
 							index = triangle_table[flag_index][3 * count_triangle + count_point];
-
 							glNormal3f(edge_norm[index].x, edge_norm[index].y, edge_norm[index].z);
 							glVertex3f(edge_vertex[index].x*sim_ratio.x + origin.x,
 								edge_vertex[index].y*sim_ratio.y + origin.y,
 								edge_vertex[index].z*sim_ratio.z + origin.z);
-
 						}
 						glEnd();
 					}

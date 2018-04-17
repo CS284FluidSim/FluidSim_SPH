@@ -86,12 +86,9 @@ namespace FluidSim {
 		p->pos = pos;
 		p->vel = vel;
 
-		p->acc(0) = 0.0f;
-		p->acc(0) = 0.0f;
-		p->acc(0) = 0.0f;
-		p->ev(0) = 0.0f;
-		p->ev(1) = 0.0f;
-		p->ev(2) = 0.0f;
+		p->force(0) = 0.0f;
+		p->force(0) = 0.0f;
+		p->force(0) = 0.0f;
 
 		p->dens = rest_dens_;
 		p->pres = 0.0f;
@@ -238,9 +235,9 @@ namespace FluidSim {
 			p = &(particles_[i]);
 			cell_pos = calc_cell_pos(p->pos);
 
-			p->acc(0) = 0.0f;
-			p->acc(1) = 0.0f;
-			p->acc(2) = 0.0f;
+			p->force(0) = 0.0f;
+			p->force(1) = 0.0f;
+			p->force(2) = 0.0f;
 
 			grad_color(0) = 0.0f;
 			grad_color(1) = 0.0f;
@@ -276,13 +273,13 @@ namespace FluidSim {
 								//-rij.normalized()*MASS*(pi.p + pj.p)/(2.f * pj.rho) * SPIKY_GRAD*pow(H-r,2.f);
 								pres_kernel = grad_spiky_ * kernel_r * kernel_r;
 								temp_force = V * (p->pres + np->pres) * pres_kernel;
-								p->acc -=rel_pos*temp_force / r;
+								p->force -=rel_pos*temp_force / r;
 
-								rel_vel = np->ev - p->ev;
+								rel_vel = np->vel - p->vel;
 								//VISC*MASS*(pj.v - pi.v)/pj.rho * VISC_LAP*(H-r);
 								visc_kernel = lplc_visco_*(kernel_ - r);
 								temp_force = V * visc_ * visc_kernel;
-								p->acc += rel_vel*temp_force;
+								p->force += rel_vel*temp_force;
 
 								float temp = (-1) * grad_poly6_ * V * pow(kernel2_ - r2, 2);
 								grad_color += temp * rel_pos;
@@ -300,7 +297,7 @@ namespace FluidSim {
 			p->normal = grad_color/p->surf_norm;
 			if (p->surf_norm > surf_norm_)
 			{
-				p->acc += surf_coef_ * lplc_color * grad_color / p->surf_norm;
+				p->force += surf_coef_ * lplc_color * grad_color / p->surf_norm;
 			}
 		}
 	}
@@ -312,7 +309,7 @@ namespace FluidSim {
 		{
 			p = &(particles_[i]);
 
-			p->vel += p->acc*timestep_ / p->dens + gravity_*timestep_;
+			p->vel += p->force*timestep_ / p->dens + gravity_*timestep_;
 			p->pos += p->vel*timestep_;
 
 			if (p->pos(0) >= world_size_(0) - BOUNDARY)
@@ -350,8 +347,6 @@ namespace FluidSim {
 				p->vel(2) = p->vel(2)*bound_damping_;
 				p->pos(2) = 0.0f;
 			}
-
-			p->ev = (p->ev + p->vel) / 2;
 		}
 	}
 
