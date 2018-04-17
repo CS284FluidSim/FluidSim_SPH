@@ -1,5 +1,5 @@
 #include "fluidsim_timer.h"
-#include "fluidsim_system.h"
+#include "fluidsim_system_gpu.cuh"
 #include "fluidsim_marchingcube.h"
 #include <GL\glew.h>
 #include <GL\freeglut.h>
@@ -9,12 +9,10 @@
 
 #pragma comment(lib, "glew32.lib") 
 
-using namespace FluidSim;
-
 //Somulation system global variable
-SimulateSystem *simsystem;
-MarchingCube *marchingcube;
-Timer *timer;
+FluidSim::SimulateSystem *simsystem;
+FluidSim::MarchingCube *marchingcube;
+FluidSim::Timer *timer;
 
 //OpenGL global variable
 char *window_title;
@@ -96,12 +94,10 @@ void draw_box(float ox, float oy, float oz, float width, float height, float len
 
 void init_sph_system()
 {
-	simsystem = new FluidSim::SimulateSystem(world_size, world_size, world_size);
-	simsystem->add_cube_fluid({ 0.f, 0.f, 0.f }, { 1.0f, 0.9f, 0.3f });
+	simsystem = new FluidSim::SimulateSystem(world_size,world_size,world_size);
+	simsystem->add_cube_fluid(make_float3(0.f, 0.f, 0.f), make_float3(1.0f, 0.9f, 0.3f));
 
-	sim_ratio.x = real_world_side.x / world_size;
-	sim_ratio.y = real_world_side.y / world_size;
-	sim_ratio.z = real_world_side.z / world_size;
+	sim_ratio = real_world_side / world_size;
 
 	timer = new FluidSim::Timer();
 	window_title = (char *)malloc(sizeof(char) * 50);
@@ -114,7 +110,7 @@ void init_marching_cube()
 	model_vox = (float3 *)malloc(sizeof(float3)*row_vox*col_vox*len_vox);
 	model_scalar = (float *)malloc(sizeof(float)*row_vox*col_vox*len_vox);
 
-	marchingcube = new FluidSim::MarchingCube(row_vox, col_vox, len_vox, model_scalar, model_vox, sim_ratio, real_world_origin, vox_size, simsystem->get_surf_norm());
+	marchingcube = new FluidSim::MarchingCube(row_vox, col_vox, len_vox, model_scalar, model_vox, sim_ratio, real_world_origin, vox_size, simsystem->get_sys_pararm()->surf_norm);
 }
 
 void init()
@@ -131,8 +127,8 @@ void init()
 	glLoadIdentity();
 	glTranslatef(0.0f, 0.0f, -3.0f);
 
-	real_world_origin = { -10.f, -10.f, -10.f };
-	real_world_side = { 20.f, 20.f, 20.f };
+	real_world_origin = make_float3(-10.f, -10.f, -10.f);
+	real_world_side = make_float3(20.f, 20.f, 20.f);
 }
 
 void render_simulation()
@@ -142,7 +138,7 @@ void render_simulation()
 		glPointSize(1.0f);
 		glColor3f(0.2f, 0.2f, 1.0f);
 
-		float3 color = { 0.2f, 0.2f, 1.0f };
+		float3 color = make_float3(0.2f, 0.2f, 1.0f);
 		float3 pos;
 
 		FluidSim::Particle *particles = simsystem->get_particles();
@@ -151,7 +147,7 @@ void render_simulation()
 		{
 			if (render_mode == 0)
 			{
-				if (particles[i].surf_norm > simsystem->get_surf_norm())
+				if (particles[i].surf_norm > simsystem->get_sys_pararm()->surf_norm)
 				{
 					glColor3f(1.0f, 0.0f, 0.0f);
 				}
@@ -166,16 +162,13 @@ void render_simulation()
 			}
 			else
 			{
-				float3 vel;
-				vel.x = particles[i].vel(0);
-				vel.y = particles[i].vel(1);
-				vel.z = particles[i].vel(2);
+				float3 vel = particles[i].vel;
 				glColor3f(vel.x*10.f, vel.y*10.f, vel.z*10.f);
 			}
 			glBegin(GL_POINTS);
-			pos.x = particles[i].pos(0)*sim_ratio.x + real_world_origin.x;
-			pos.y = particles[i].pos(1)*sim_ratio.y + real_world_origin.y;
-			pos.z = particles[i].pos(2)*sim_ratio.z + real_world_origin.z;
+			pos.x = particles[i].pos.x*sim_ratio.x + real_world_origin.x;
+			pos.y = particles[i].pos.y*sim_ratio.y + real_world_origin.y;
+			pos.z = particles[i].pos.z*sim_ratio.z + real_world_origin.z;
 			glVertex3f(pos.x, pos.y, pos.z);
 			glEnd();
 		}
@@ -237,18 +230,18 @@ void render_simulation()
 				//	{
 				//		for (float z = -0.01; z <= 0.01; z += vox_size)
 				//		{
-				/*if (particles[i].pos.x + x < 0 || particles[i].pos.y + y < 0 || particles[i].pos.z + z < 0
-				|| particles[i].pos.x + x > world_size || particles[i].pos.y + y > world_size || particles[i].pos.z + z > world_size)
-				continue;*/
-				int cell_pos_x = (particles[i].pos(0)) / vox_size;
-				int cell_pos_y = (particles[i].pos(1)) / vox_size;
-				int cell_pos_z = (particles[i].pos(2)) / vox_size;
-				int index = cell_pos_z*row_vox*col_vox + cell_pos_y*row_vox + cell_pos_x;
-				model_vox[index].x = cell_pos_x*vox_size;
-				model_vox[index].y = cell_pos_y*vox_size;
-				model_vox[index].z = cell_pos_z*vox_size;
-				if (particles[i].surf_norm>simsystem->get_surf_norm())
-					model_scalar[index] = particles[i].surf_norm;
+							/*if (particles[i].pos.x + x < 0 || particles[i].pos.y + y < 0 || particles[i].pos.z + z < 0
+								|| particles[i].pos.x + x > world_size || particles[i].pos.y + y > world_size || particles[i].pos.z + z > world_size)
+								continue;*/
+							int cell_pos_x = (particles[i].pos.x) / vox_size;
+							int cell_pos_y = (particles[i].pos.y) / vox_size;
+							int cell_pos_z = (particles[i].pos.z) / vox_size;
+							int index = cell_pos_z*row_vox*col_vox + cell_pos_y*row_vox + cell_pos_x;
+							model_vox[index].x = cell_pos_x*vox_size;
+							model_vox[index].y = cell_pos_y*vox_size;
+							model_vox[index].z = cell_pos_z*vox_size;
+							if (particles[i].surf_norm>simsystem->get_sys_pararm()->surf_norm)
+								model_scalar[index] = particles[i].surf_norm;
 				//		}
 				//	}
 				//}

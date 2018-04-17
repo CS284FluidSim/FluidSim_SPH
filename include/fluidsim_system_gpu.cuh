@@ -54,7 +54,7 @@ namespace FluidSim {
 	public:
 		float3 pos;
 		float3 vel;
-		float3 acc;
+		float3 force;
 		float3 ev;
 
 		float dens;
@@ -74,6 +74,7 @@ namespace FluidSim {
 			void start();
 		__host__
 			void animation();
+
 		__host__
 			bool is_running() {
 			return sys_running_;

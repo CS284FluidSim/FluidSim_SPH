@@ -334,6 +334,12 @@ namespace FluidSim {
 	}
 
 	__host__
+		void render()
+	{
+
+	}
+
+	__host__
 	void SimulateSystem::build_table()
 	{
 		if (sys_param_->num_particles == 0)
