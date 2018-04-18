@@ -58,7 +58,7 @@ namespace FluidSim {
 		class SimulateSystem {
 		public:
 			__host__
-				SimulateSystem(float world_size_x, float world_size_y, float world_size_z);
+				SimulateSystem(float3 world_size, float3 sim_ratio, float3 world_origin);
 			__host__
 				~SimulateSystem();
 			__host__

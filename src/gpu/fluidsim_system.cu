@@ -205,7 +205,7 @@ namespace FluidSim {
 		}
 
 		__host__
-			SimulateSystem::SimulateSystem(float world_size_x, float world_size_y, float world_size_z)
+			SimulateSystem::SimulateSystem(float3 world_size, float3 sim_ratio, float3 world_origin)
 		{
 			sys_running_ = false;
 			sys_param_ = new SysParam();
@@ -215,9 +215,7 @@ namespace FluidSim {
 			sys_param_->kernel = 0.04f;
 			sys_param_->mass = 0.02f;
 
-			sys_param_->world_size.x = world_size_x;
-			sys_param_->world_size.y = world_size_y;
-			sys_param_->world_size.z = world_size_z;
+			sys_param_->world_size = world_size;
 			sys_param_->cell_size = sys_param_->kernel;
 			sys_param_->grid_size.x = (int)ceil(sys_param_->world_size.x / sys_param_->cell_size);
 			sys_param_->grid_size.y = (int)ceil(sys_param_->world_size.y / sys_param_->cell_size);
@@ -254,11 +252,22 @@ namespace FluidSim {
 			cudaMalloc(&dev_index_, sizeof(uint)*sys_param_->max_particles);
 			cudaMalloc(&dev_start_, sizeof(uint)*sys_param_->total_cells);
 			cudaMalloc(&dev_end_, sizeof(uint)*sys_param_->total_cells);
+
+			//Marching Cubes
+			float vox_size = 0.02f;
+			uint3 dim_vox = make_uint3(ceil(world_size.x / vox_size),
+				ceil(world_size.y / vox_size),
+				ceil(world_size.z / vox_size));
+			marchingCube_ = new MarchingCube(dev_particles_, dim_vox, sim_ratio, world_origin, vox_size, sys_param_->rest_dens);
 		}
 
 		__host__
 			SimulateSystem::~SimulateSystem() {
+			
 			free(particles_);
+
+			delete marchingCube_;
+
 			cudaFree(dev_sys_param_);
 			cudaFree(dev_particles_);
 			cudaFree(dev_hash_);
@@ -328,6 +337,7 @@ namespace FluidSim {
 			comp_force();
 			integrate();
 			cudaMemcpy(particles_, dev_particles_, sizeof(Particle)*sys_param_->num_particles, cudaMemcpyDeviceToHost);
+			marchingCube_->run();
 		}
 
 		__host__

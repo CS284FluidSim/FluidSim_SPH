@@ -8,24 +8,17 @@
 #include <helper_math.h>
 
 #include "gpu/fluidsim_particle.cuh"
+#include "gpu/fluidsim_marchingcube_param.cuh"
 
 namespace FluidSim {
 	namespace gpu {
-		__constant__ uint3 dev_dim_vox;
-		__constant__ uint dev_tot_vox;
-		__constant__ float dev_step;
-		__constant__ float dev_isovalue;
-		__constant__ float3 dev_origin;
-		__constant__ float3 dev_sim_ratio;
 
 		class MarchingCube
 		{
 		private:
-			uint3 dim_vox_;
-			uint tot_vox_;
-			float step_;
-			float3 origin_;
-			float3 sim_ratio_;
+			MarchingCubeParam *param_;
+
+			MarchingCubeParam *dev_param_;
 
 			float3 *dev_pos_;
 			float *dev_scalar_;
