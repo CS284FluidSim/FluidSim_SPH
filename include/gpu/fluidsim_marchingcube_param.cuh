@@ -13,6 +13,7 @@ namespace FluidSim {
 		public:
 			uint3 dim_vox;
 			uint tot_vox;
+			uint tot_particles;
 			float step;
 			float isovalue;
 			float3 origin;

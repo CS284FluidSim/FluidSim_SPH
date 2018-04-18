@@ -67,7 +67,8 @@ namespace FluidSim {
 				void start();
 			__host__
 				void animation();
-
+			__host__
+				void render();
 			__host__
 				bool is_running() {
 				return sys_running_;

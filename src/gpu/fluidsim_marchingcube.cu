@@ -5,6 +5,9 @@
 #include <cuda_runtime.h>
 #include <helper_math.h>
 
+#include <thrust\copy.h>
+#include <thrust\device_ptr.h>
+
 #include "gpu/fluidsim_marchingcube.cuh"
 
 namespace FluidSim {
@@ -12,22 +15,65 @@ namespace FluidSim {
 	namespace gpu {
 
 		__global__
-			void init_grid_kernel(Particle *dev_particles, float *dev_scalar, float3* dev_pos, float3 *dev_normal, MarchingCubeParam *dev_param)
+			void init_grid_kernel(float *dev_scalar, float3* dev_pos, MarchingCubeParam *dev_param)
 		{
 			uint global_index = blockIdx.x*blockDim.x + threadIdx.x;
 
 			if (global_index < dev_param->tot_vox)
 			{
-				dev_pos[0].x = dev_param->isovalue;
-				dev_pos[0].y = dev_param->isovalue;
-				dev_pos[0].z = dev_param->isovalue;
-			}
+				uint num_xy = global_index % (dev_param->dim_vox.x*dev_param->dim_vox.y);
 
-			//dev_pos[0].x = dev_param->edge_conn;
+				uint count_z = global_index / (dev_param->dim_vox.x*dev_param->dim_vox.y);
+				uint count_y = num_xy / dev_param->dim_vox.x;
+				uint count_x = num_xy % dev_param->dim_vox.x;
+
+				dev_pos[global_index].x = count_x*dev_param->step;
+				dev_pos[global_index].y = count_y*dev_param->step;
+				dev_pos[global_index].z = count_z*dev_param->step;
+
+				dev_scalar[global_index] = 0.f;
+			}
 		}
 
 		__global__
-			void marching_cube_kernel(Particle *dev_particles, float *dev_scalar, float3* dev_pos, float3 *dev_normal, float3 *dev_vertex, float3  *dev_vertex_normal, MarchingCubeParam *dev_param)
+			void calc_scalar_kernel(Particle *dev_particles, float *dev_scalar, float3* dev_pos, MarchingCubeParam *dev_param)
+		{
+			uint global_index = blockIdx.x*blockDim.x + threadIdx.x;
+
+			float radius = 0.02f;
+			float vox_size = dev_param->step;
+
+			if (global_index < dev_param->tot_particles)
+			{
+				int cell_pos_x = (dev_particles[global_index].pos.x) / vox_size;
+				int cell_pos_y = (dev_particles[global_index].pos.y) / vox_size;
+				int cell_pos_z = (dev_particles[global_index].pos.z) / vox_size;
+				for (float x = -radius; x < radius; x+=vox_size)
+				{
+					for (float y = -radius; y < radius; y+=vox_size)
+					{
+						for (float z = -radius; z < radius; z+=vox_size)
+						{
+							int pos_x = cell_pos_x + x / vox_size;
+							int pos_y = cell_pos_y + y / vox_size;
+							int pos_z = cell_pos_z + z / vox_size;
+							if (pos_x < 0 || pos_x >= dev_param->dim_vox.x ||
+								pos_y < 0 || pos_y >= dev_param->dim_vox.y ||
+								pos_z < 0 || pos_z >= dev_param->dim_vox.z)
+								continue;
+							else
+							{
+								int index = pos_z*dev_param->dim_vox.x*dev_param->dim_vox.y + pos_y*dev_param->dim_vox.x + pos_x;
+								dev_scalar[index] = dev_particles[global_index].dens;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		__global__
+			void marching_cube_kernel(float *dev_scalar, float3* dev_pos, float3 *dev_normal, float3 *dev_vertex, float3  *dev_vertex_normal, MarchingCubeParam *dev_param)
 		{
 			uint global_index = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -52,7 +98,7 @@ namespace FluidSim {
 				uint x = 0;
 				uint y = 0;
 				uint z = 0;
-
+				
 				if (count_x == 0)
 				{
 					prev = count_z*dev_param->dim_vox.x*dev_param->dim_vox.y + count_y*dev_param->dim_vox.x + count_x + 1;
@@ -126,6 +172,9 @@ namespace FluidSim {
 
 				__syncthreads();
 
+				if (count_x >= dev_param->dim_vox.x - 1 || count_y >= dev_param->dim_vox.y - 1 || count_z >= dev_param->dim_vox.z - 1)
+					return;
+				
 				int flag_index;
 				int edge_flags;
 				for (uint count = 0; count < 8; count++)
@@ -139,7 +188,7 @@ namespace FluidSim {
 					cube_pos[count] = dev_pos[index];
 					cube_norm[count] = dev_normal[index];
 				}
-
+				
 				flag_index = 0;
 				for (uint count = 0; count < 8; count++)
 				{
@@ -148,13 +197,13 @@ namespace FluidSim {
 						flag_index |= 1 << count;
 					}
 				}
-
+		
 				edge_flags = dev_param->cube_edge_flags[flag_index];
 				if (edge_flags == 0)
 				{
 					return;
 				}
-
+			
 				for (uint count = 0; count < 12; count++)
 				{
 					if (edge_flags & (1 << count))
@@ -171,7 +220,7 @@ namespace FluidSim {
 
 					}
 				}
-
+				
 				for (uint count_triangle = 0; count_triangle < 5; count_triangle++)
 				{
 					if (dev_param->triangle_table[flag_index][3 * count_triangle] < 0)
@@ -182,8 +231,8 @@ namespace FluidSim {
 					for (uint count_point = 0; count_point < 3; count_point++)
 					{
 						index = dev_param->triangle_table[flag_index][3 * count_triangle + count_point];
-						dev_vertex_normal[global_index] = make_float3(edge_norm[index].x, edge_norm[index].y, edge_norm[index].z);
-						dev_vertex[global_index] = make_float3(edge_vertex[index].x*dev_param->sim_ratio.x + dev_param->origin.x,
+						dev_vertex_normal[3 * global_index + count_point] = make_float3(0, 1, 0);//edge_norm[index];
+						dev_vertex[3 * global_index + count_point] = make_float3(edge_vertex[index].x*dev_param->sim_ratio.x + dev_param->origin.x,
 							edge_vertex[index].y*dev_param->sim_ratio.y + dev_param->origin.y,
 							edge_vertex[index].z*dev_param->sim_ratio.z + dev_param->origin.z);
 					}
@@ -192,65 +241,106 @@ namespace FluidSim {
 		}
 
 		__host__
-			MarchingCube::MarchingCube(Particle *dev_particles, uint3 dim_vox, float3 sim_ratio, float3 origin, float step, float isovalue)
+			MarchingCube::MarchingCube(uint3 dim_vox, float3 sim_ratio, float3 origin, float step, float isovalue)
 		{
 			param_ = new MarchingCubeParam();
 			param_->dim_vox = dim_vox;
 			param_->tot_vox = dim_vox.x*dim_vox.y*dim_vox.z;
-
 			param_->origin = origin;
 			param_->sim_ratio = sim_ratio;
 			param_->step = step;
-
 			param_->isovalue = isovalue;
 
-			std::cout << sizeof(MarchingCubeParam) << std::endl;
-
+			vertex_ = (float3 *)malloc(sizeof(float3) * param_->tot_vox*3);
+			vertex_normal_ = (float3 *)malloc(sizeof(float3) * param_->tot_vox*3);
 			cudaMalloc(&dev_param_, sizeof(MarchingCubeParam));
-			cudaMemcpy(dev_param_, param_, sizeof(MarchingCubeParam), cudaMemcpyHostToDevice);
-
 			cudaMalloc(&dev_pos_, sizeof(float3)*param_->tot_vox);
 			cudaMalloc(&dev_scalar_, sizeof(float)*param_->tot_vox);
 			cudaMalloc(&dev_normal_, sizeof(float3)*param_->tot_vox);
-			cudaMalloc(&dev_vertex_, sizeof(float3)*param_->tot_vox);
-			cudaMalloc(&dev_vertex_normal_, sizeof(float3)*param_->tot_vox);
+			cudaMalloc(&dev_vertex_, sizeof(float3)*param_->tot_vox*3);
+			//cudaMalloc(&dev_vertex_non_zero, sizeof(float3)*param_->tot_vox);
+			cudaMalloc(&dev_vertex_normal_, sizeof(float3)*param_->tot_vox*3);
+			//cudaMalloc(&dev_vertex_normal_non_zero, sizeof(float3)*param_->tot_vox);
 		}
 
 		__host__
 			MarchingCube::~MarchingCube()
 		{
+			free(vertex_);
+			free(vertex_normal_);
 			delete param_;
 			cudaFree(dev_param_);
 			cudaFree(dev_pos_);
 			cudaFree(dev_scalar_);
 			cudaFree(dev_normal_);
 			cudaFree(dev_vertex_);
+			cudaFree(dev_vertex_non_zero);
 			cudaFree(dev_vertex_normal_);
+			cudaFree(dev_vertex_normal_non_zero);
 		}
 
 		__host__
-			void MarchingCube::run()
+			void MarchingCube::init(uint num_particles)
+		{
+			param_->tot_particles = num_particles;
+			cudaMemcpy(dev_param_, param_, sizeof(MarchingCubeParam), cudaMemcpyHostToDevice);
+
+			uint num_threads;
+			uint num_blocks;
+
+			calc_grid_size(param_->tot_vox, 512, num_blocks, num_threads);
+
+			init_grid_kernel << < num_blocks, num_threads >> > (dev_scalar_, dev_pos_, dev_param_);
+		}
+
+		__host__
+			void MarchingCube::compute(Particle *dev_particles)
 		{
 			uint num_threads;
 			uint num_blocks;
 
 			calc_grid_size(param_->tot_vox, 512, num_blocks, num_threads);
-			
-			init_grid_kernel << <num_blocks, num_threads >> > (dev_particles_, dev_scalar_, dev_pos_, dev_normal_, dev_param_);
 
-			//Debug
-			float3 tmp[100];
-			cudaMemcpy(tmp, dev_pos_, 100, cudaMemcpyDeviceToHost);
-			for (int i = 0; i < 100; ++i)
-				std::cout << tmp[i].x << ", " << tmp[i].y << ", " << tmp[i].z << std::endl;
+			cudaMemset(dev_scalar_, 0, sizeof(float)*param_->tot_vox);
+			cudaMemset(dev_normal_, 0, sizeof(float3)*param_->tot_vox);
+			cudaMemset(dev_vertex_, 0, sizeof(float3)*param_->tot_vox*3);
+			cudaMemset(dev_vertex_normal_, 0, sizeof(float3)*param_->tot_vox*3);
 
-			marching_cube_kernel << <num_blocks, num_threads >> > (dev_particles_, dev_scalar_, dev_pos_, dev_normal_, dev_vertex_, dev_vertex_normal_, dev_param_);
+			calc_scalar_kernel << <num_blocks, num_threads >> > (dev_particles, dev_scalar_, dev_pos_, dev_param_);
+
+			marching_cube_kernel << <num_blocks, num_threads >> > (dev_scalar_, dev_pos_, dev_normal_, dev_vertex_, dev_vertex_normal_, dev_param_);
 		}
 
 		__host__
 			void MarchingCube::render()
 		{
+			//cudaMemset(dev_vertex_non_zero, 0, sizeof(float3)*param_->tot_vox);
+			//cudaMemset(dev_vertex_normal_non_zero, 0, sizeof(float3)*param_->tot_vox);
+			//thrust::copy_if(thrust::device_ptr<float3>(dev_vertex_), thrust::device_ptr<float3>(dev_vertex_ + param_->tot_vox), thrust::device_ptr<float3>(dev_vertex_non_zero), is_zero_3f());
+			//cudaMemcpy(vertex_, dev_vertex_non_zero, sizeof(float3)*param_->tot_vox, cudaMemcpyDeviceToHost);
+			//thrust::copy_if(thrust::device_ptr<float3>(dev_vertex_normal_), thrust::device_ptr<float3>(dev_vertex_normal_ + param_->tot_vox), thrust::device_ptr<float3>(dev_vertex_normal_non_zero), is_zero_3f());
+			//cudaMemcpy(vertex_normal_, dev_vertex_normal_non_zero, sizeof(float3)*param_->tot_vox, cudaMemcpyDeviceToHost);
+			
+			cudaMemcpy(vertex_, dev_vertex_, sizeof(float3)*param_->tot_vox*3, cudaMemcpyDeviceToHost);
+			cudaMemcpy(vertex_normal_, dev_vertex_normal_, sizeof(float3)*param_->tot_vox*3, cudaMemcpyDeviceToHost);
 
+			for (int i = 0; i<param_->tot_vox; i++)
+			{
+				int idx = 3 * i;
+				if ((vertex_[idx].x == 0.f&&vertex_[idx].y == 0.f&&vertex_[idx].z == 0.f)
+					&&(vertex_normal_[idx].x == 0.f&&vertex_normal_[idx].y == 0.f&&vertex_normal_[idx].z == 0.f))
+					continue;
+				else
+				{
+					glBegin(GL_TRIANGLES);
+					for (int j = 0; j < 3; ++j)
+					{
+						glNormal3f(vertex_normal_[idx+j].x, vertex_normal_[idx+j].y, vertex_normal_[idx+j].z);
+						glVertex3f(vertex_[idx+j].x, vertex_[idx+j].y, vertex_[idx+j].z);
+					}
+					glEnd();
+				}
+			}
 		}
 	}
 }

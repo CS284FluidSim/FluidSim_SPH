@@ -13,11 +13,19 @@
 namespace FluidSim {
 	namespace gpu {
 
+		struct is_zero_3f
+		{
+			__host__ __device__
+				bool operator()(const float3 v)
+			{
+				return v.x == 0.f && v.y == 0.f && v.z == 0.f;
+			}
+		};
+
 		class MarchingCube
 		{
 		private:
 			MarchingCubeParam *param_;
-
 			MarchingCubeParam *dev_param_;
 
 			float3 *dev_pos_;
@@ -26,20 +34,22 @@ namespace FluidSim {
 
 			//Output Vertex Normal
 			float3 *dev_vertex_normal_;
+			float3 *dev_vertex_normal_non_zero;
+			float3 *vertex_normal_;
 			//Output Vertex
 			float3 *dev_vertex_;
-
-			Particle *dev_particles_;
-
-			float isovalue_;
+			float3 *dev_vertex_non_zero;
+			float3 *vertex_;
 
 		public:
 			__host__
-				MarchingCube(Particle *dev_particles, uint3 dim_vox, float3 sim_ratio, float3 origin, float step, float isovalue);
+				MarchingCube(uint3 dim_vox, float3 sim_ratio, float3 origin, float step, float isovalue);
 			__host__
 				~MarchingCube();
 			__host__
-				void run();
+				void init(uint num_particles);
+			__host__
+				void compute(Particle *dev_particles);
 			__host__
 				void render();
 

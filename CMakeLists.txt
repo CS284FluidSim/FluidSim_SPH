@@ -14,13 +14,14 @@ enable_language(CUDA)
 SET(SOURCE
   ${CMAKE_SOURCE_DIR}/src/gpu/fluidsim_system.cu
   ${CMAKE_SOURCE_DIR}/src/gpu/fluidsim_marchingcube.cu
+    ${CMAKE_SOURCE_DIR}/src/fluidsim_marchingcube.cpp
   ${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp
 )
 SET(HEADERS
 	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_system.cuh
 	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_particle.cuh
 	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_marchingcube.cuh
-	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_marchingcube_list.cuh
+	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_marchingcube_param.cuh
 	${CMAKE_SOURCE_DIR}/include/fluidsim_timer.h
 )
 add_library(fluidsim_sph_gpu ${SOURCE} ${HEADERS})

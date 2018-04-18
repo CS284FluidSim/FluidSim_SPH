@@ -258,7 +258,7 @@ namespace FluidSim {
 			uint3 dim_vox = make_uint3(ceil(world_size.x / vox_size),
 				ceil(world_size.y / vox_size),
 				ceil(world_size.z / vox_size));
-			marchingCube_ = new MarchingCube(dev_particles_, dim_vox, sim_ratio, world_origin, vox_size, sys_param_->rest_dens);
+			marchingCube_ = new MarchingCube(dim_vox, sim_ratio, world_origin, vox_size, sys_param_->rest_dens);
 		}
 
 		__host__
@@ -281,6 +281,7 @@ namespace FluidSim {
 			sys_running_ = true;
 			cudaMemcpy(dev_particles_, particles_, sys_param_->num_particles * sizeof(Particle), cudaMemcpyHostToDevice);
 			cudaMemcpy(dev_sys_param_, sys_param_, sizeof(SysParam), cudaMemcpyHostToDevice);
+			marchingCube_->init(sys_param_->num_particles);
 			std::cout << "Started simulation with " << sys_param_->num_particles << " particles" << std::endl;
 		}
 
@@ -336,8 +337,15 @@ namespace FluidSim {
 			comp_dens_pres();
 			comp_force();
 			integrate();
+			marchingCube_->compute(dev_particles_);
+
 			cudaMemcpy(particles_, dev_particles_, sizeof(Particle)*sys_param_->num_particles, cudaMemcpyDeviceToHost);
-			marchingCube_->run();
+		}
+		
+		__host__
+			void SimulateSystem::render()
+		{
+			marchingCube_->render();
 		}
 
 		__host__
@@ -351,11 +359,9 @@ namespace FluidSim {
 			calc_grid_size(sys_param_->num_particles, 512, num_blocks, num_threads);
 			calc_hash << < num_blocks, num_threads >> > (dev_hash_, dev_index_, dev_particles_, dev_sys_param_);
 
-
 			thrust::sort_by_key(thrust::device_ptr<uint>(dev_hash_),
 				thrust::device_ptr<uint>(dev_hash_ + sys_param_->num_particles),
 				thrust::device_ptr<uint>(dev_index_));
-
 
 			cudaMemset(dev_start_, 0xffffffff, sys_param_->total_cells * sizeof(uint));
 			cudaMemset(dev_end_, 0x0, sys_param_->total_cells * sizeof(uint));
