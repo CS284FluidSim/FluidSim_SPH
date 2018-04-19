@@ -29,11 +29,24 @@ namespace FluidSim {
 			}
 		};
 
+		struct is_non_zero_float3f
+		{
+			__host__ __device__
+				bool operator()(const float3 &tri)
+			{
+				return !(tri.x == 0.f&&tri.y == 0.f&&tri.z == 0.f);
+			}
+		};
+
 		class MarchingCube
 		{
 		private:
 			MarchingCubeParam *param_;
 			MarchingCubeParam *dev_param_;
+
+			float3 *pos_;
+			float *scalar_;
+			float3 *normal_;
 
 			float3 *dev_pos_;
 			float *dev_scalar_;
@@ -45,6 +58,11 @@ namespace FluidSim {
 			Triangle *tri_;
 
 		public:
+			enum RenderMode {
+				TRI, NORMAL, SCALAR, POS
+			};
+
+		public:
 			__host__
 				MarchingCube(uint3 dim_vox, float3 sim_ratio, float3 origin, float step, float isovalue);
 			__host__
@@ -54,7 +72,9 @@ namespace FluidSim {
 			__host__
 				void compute(Particle *dev_particles);
 			__host__
-				void render();
+				void render(RenderMode rm);
+
+
 
 		private:
 			__host__

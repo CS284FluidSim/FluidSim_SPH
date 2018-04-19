@@ -337,15 +337,16 @@ namespace FluidSim {
 			comp_dens_pres();
 			comp_force();
 			integrate();
+
 			marchingCube_->compute(dev_particles_);
 
 			cudaMemcpy(particles_, dev_particles_, sizeof(Particle)*sys_param_->num_particles, cudaMemcpyDeviceToHost);
 		}
 		
 		__host__
-			void SimulateSystem::render()
+			void SimulateSystem::render(MarchingCube::RenderMode rm)
 		{
-			marchingCube_->render();
+			marchingCube_->render(rm);
 		}
 
 		__host__

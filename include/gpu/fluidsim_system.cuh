@@ -68,7 +68,7 @@ namespace FluidSim {
 			__host__
 				void animation();
 			__host__
-				void render();
+				void render(MarchingCube::RenderMode rm);
 			__host__
 				bool is_running() {
 				return sys_running_;
