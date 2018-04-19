@@ -47,7 +47,7 @@ bool wireframe = false;
 bool step = false;
 
 //Simulation Parameters
-float world_size = 0.64f;
+float world_size = 0.16f;
 float vox_size = 0.01f;
 int row_vox = world_size / vox_size;
 int col_vox = world_size / vox_size;

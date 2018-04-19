@@ -1,4 +1,5 @@
 #include "fluidsim_system.h"
+#include <iostream>
 #define PI 3.141592f
 #define INF 1E-12f
 #define BOUNDARY 0.0001f
@@ -31,7 +32,7 @@ namespace FluidSim {
 		rest_dens_ = 1000.f;
 		gas_const_ = 1.0f;
 		visc_ = 6.5f;
-		timestep_ = 0.001f; // original timestep = 0.003f
+		timestep_ = 0.003f; // original timestep = 0.003f
 		surf_norm_ = 6.0f;
 		surf_coef_ = 0.1f;
 
@@ -94,9 +95,15 @@ namespace FluidSim {
 		p->pos = pos;
 		p->vel = vel;
 
+		p->pred_vel(0) = 0.0f;
+		p->pred_vel(1) = 0.0f;
+		p->pred_vel(2) = 0.0f;
+
+		p->pred_pos = p->pos;
+
 		p->acc(0) = 0.0f;
-		p->acc(0) = 0.0f;
-		p->acc(0) = 0.0f;
+		p->acc(1) = 0.0f;
+		p->acc(2) = 0.0f;
 		p->ev(0) = 0.0f;
 		p->ev(1) = 0.0f;
 		p->ev(2) = 0.0f;
@@ -117,21 +124,24 @@ namespace FluidSim {
 		}
 
 		build_table();
-		comp_dens_pres();
-		comp_force();
-		/*init_dens();
+		//comp_dens_pres();
+		//comp_force();
+		
+		init_dens();
 		init_force();
 
 		int iter = 0;
 		while (iter < maxIteration) {
 			pred_vel_pos();
 			update_dens_var_scale();
+			//std::cout << iter << std::endl;
 			predDensVar_updatePres();
 			update_presForce();
 			if (++iter >= minIteration && maxDensityVariance < densityVarianceThreshold) {
 				break;
 			}
-		}*/
+		}
+		
 
 		integrate();
 	}
@@ -210,7 +220,9 @@ namespace FluidSim {
 								continue;
 							}
 
-							p->dens = p->dens + mass_ * poly6_value_ * pow(kernel2_ - r2, 3);
+							//p->dens = p->dens + mass_ * poly6_value_ * pow(kernel2_ - r2, 3);
+
+							p->dens = p->dens + poly6_value_ * pow(kernel2_ - r2, 3);  // In order to save computation, multiply mass_ at the final result
 
 							np = np->next;
 						}
@@ -218,7 +230,7 @@ namespace FluidSim {
 				}
 			}
 
-			p->dens = p->dens + self_dens_;
+			p->dens = mass_ * p->dens + self_dens_;
 			p->pres = (pow(p->dens / rest_dens_, 7) - 1) *gas_const_;
 		}
 	}
@@ -332,7 +344,6 @@ namespace FluidSim {
 			p->pos += p->vel*timestep_;
 
 			
-
 			if (p->pos(0) >= world_size_(0) - BOUNDARY)
 			{
 				p->vel(0) = p->vel(0)*bound_damping_;
@@ -403,6 +414,7 @@ namespace FluidSim {
 
 	void SimulateSystem::init_dens()
 	{
+		
 		Particle *p;
 		Particle *np;
 
@@ -419,6 +431,8 @@ namespace FluidSim {
 			cell_pos = calc_cell_pos(p->pos);
 
 			p->dens = 0.0f;
+			//p->pred_pos = Vector3f(0.0f);
+			//p->pred_vel = Vector3f(0.0f);
 			//p->pres = 0.0f;
 
 			for (int x = -1; x <= 1; x++)
@@ -447,7 +461,7 @@ namespace FluidSim {
 								continue;
 							}
 
-							p->dens = p->dens + mass_ * poly6_value_ * pow(kernel2_ - r2, 3);
+							p->dens = p->dens + poly6_value_ * pow(kernel2_ - r2, 3);
 
 							np = np->next;
 						}
@@ -455,7 +469,7 @@ namespace FluidSim {
 				}
 			}
 
-			p->dens = p->dens + self_dens_;
+			p->dens = mass_ * p->dens + self_dens_;
 		}
 	}
 
@@ -553,9 +567,9 @@ namespace FluidSim {
 			}
 
 			p->pres = 0.0f;
-			p->pres_force(0) = 0.f;
-			p->pres_force(1) = 0.f;
-			p->pres_force(2) = 0.f;
+			p->pres_force(0) = 0.0f;
+			p->pres_force(1) = 0.0f;
+			p->pres_force(2) = 0.0f;
 		}
 	}
 
@@ -621,45 +635,40 @@ namespace FluidSim {
 		for (unsigned int i = 0; i < num_particles_; i++)
 		{
 			p = &(particles_[i]);
+
 			cell_pos = calc_cell_pos(p->pos);
+
+			hash = calc_cell_hash(cell_pos);
 
 			float density = 0.f;
 
-			for (int x = -1; x <= 1; x++)
+			if (hash == 0xffffffff)
 			{
-				for (int y = -1; y <= 1; y++)
-				{
-					for (int z = -1; z <= 1; z++)
-					{
-						near_pos = cell_pos + Vector3i(x, y, z);
-						hash = calc_cell_hash(near_pos);
-
-						if (hash == 0xffffffff)
-						{
-							continue;
-						}
-
-						np = cells_[hash];
-						while (np != NULL)
-						{
-							rel_pos = (np->pred_pos - p->pred_pos).cast<float>();
-							r2 = rel_pos.squaredNorm();
-
-							if (r2 < INF || r2 >= kernel2_)
-							{
-								np = np->next;
-								continue;
-							}
-
-							density += mass_ * poly6_value_ * pow(kernel2_ - r2, 3);
-
-							np = np->next;
-						}
-					}
-				}
+				continue;
 			}
 
-			float dens_var = std::max(0.f, density - rest_dens_);
+			np = cells_[hash];
+
+			while (np != NULL)
+			{
+				rel_pos = (np->pred_pos - p->pred_pos).cast<float>();
+				r2 = rel_pos.squaredNorm();
+
+				if (r2 < INF || r2 >= kernel2_)
+				{
+					np = np->next;
+					continue;
+				}
+
+				density += mass_ * poly6_value_ * pow(kernel2_ - r2, 3);
+
+				np = np->next;
+			}
+
+			//std::cout << density << std::endl;
+
+			//float dens_var = std::max(0.f, density - rest_dens_);
+			float dens_var = density - rest_dens_;
 			maxDensityVariance = std::max(maxDensityVariance, dens_var);
 			accDensityVariance += dens_var;
 
@@ -696,43 +705,34 @@ namespace FluidSim {
 			p = &(particles_[i]);
 			cell_pos = calc_cell_pos(p->pos);
 
-			for (int x = -1; x <= 1; x++)
+			hash = calc_cell_hash(near_pos);
+
+			if (hash == 0xffffffff)
 			{
-				for (int y = -1; y <= 1; y++)
-				{
-					for (int z = -1; z <= 1; z++)
-					{
-						near_pos = cell_pos + Vector3i(x, y, z);
-						hash = calc_cell_hash(near_pos);
-
-						if (hash == 0xffffffff)
-						{
-							continue;
-						}
-
-						np = cells_[hash];
-						while (np != NULL)
-						{
-							rel_pos = p->pos - np->pos;
-							r2 = rel_pos.squaredNorm();
-
-							if (r2 < kernel2_ && r2 > INF)
-							{
-								r = sqrt(r2);
-								V = mass_ / np->dens / 2;
-								kernel_r = kernel_ - r;
-
-								pres_kernel = spiky_value_ * kernel_r * kernel_r;
-								temp_force = V * (p->pres + np->pres) * pres_kernel;
-								p->pres_force = rel_pos * temp_force / r;
-								p->acc -= p->pres_force;
-
-							}
-							np = np->next;
-						}
-					}
-				}
+				continue;
 			}
+
+			np = cells_[hash];
+			while (np != NULL)
+			{
+				rel_pos = p->pos - np->pos;
+				r2 = rel_pos.squaredNorm();
+
+				if (r2 < kernel2_ && r2 > INF)
+				{
+					r = sqrt(r2);
+					V = mass_ / np->dens / 2;
+					kernel_r = kernel_ - r;
+
+					pres_kernel = spiky_value_ * kernel_r * kernel_r;
+					temp_force = V * (p->pres + np->pres) * pres_kernel;
+					p->pres_force = rel_pos * temp_force / r;
+					p->acc -= p->pres_force;
+
+				}
+				np = np->next;
+			}
+
 		}
 	}
 
