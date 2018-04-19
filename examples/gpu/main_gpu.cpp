@@ -6,7 +6,6 @@
 
 #include "fluidsim_timer.h"
 #include "gpu/fluidsim_system.cuh"
-//#include "gpu/fluidsim_marchingcube.cuh"
 #include "fluidsim_marchingcube.h"
 
 #pragma comment(lib, "glew32.lib") 
@@ -40,7 +39,7 @@ bool wireframe = false;
 bool step = false;
 
 //Simulation Parameters
-float3 world_size = { 1.28f , 1.28f, 1.28f };
+float3 world_size = { 0.64f , 0.64f, 0.64f };
 float3 real_world_side = { world_size.x * 10, world_size.y * 10, world_size.z * 10 };
 float3 real_world_origin = { -real_world_side.x / 2.f, -real_world_side.y / 2.f, -real_world_side.z / 2.f };
 float3 sim_ratio;
@@ -331,17 +330,17 @@ void render_simulation()
 				}
 			}
 #endif
-			glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient);
-			glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
-			glLightfv(GL_LIGHT1, GL_POSITION, light_position);
-			glEnable(GL_LIGHT1);
-			glEnable(GL_LIGHTING);
+			//glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient);
+			//glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
+			//glLightfv(GL_LIGHT1, GL_POSITION, light_position);
+			//glEnable(GL_LIGHT1);
+			//glEnable(GL_LIGHTING);
 #ifndef GPU_MC
 			marchingcube->run();
 #else
 			simsystem->render();
 #endif
-			glDisable(GL_LIGHTING);
+			//glDisable(GL_LIGHTING);
 		}
 	}
 }

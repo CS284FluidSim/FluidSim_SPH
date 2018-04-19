@@ -13,12 +13,19 @@
 namespace FluidSim {
 	namespace gpu {
 
-		struct is_zero_3f
+		struct Triangle
+		{
+			float3 v[3];
+			float3 n[3];
+			float valid = 0.0f;
+		};
+
+		struct is_non_empty_tri
 		{
 			__host__ __device__
-				bool operator()(const float3 v)
+				bool operator()(const Triangle &tri)
 			{
-				return v.x == 0.f && v.y == 0.f && v.z == 0.f;
+				return tri.valid != 0.0f;
 			}
 		};
 
@@ -32,14 +39,10 @@ namespace FluidSim {
 			float *dev_scalar_;
 			float3 *dev_normal_;
 
-			//Output Vertex Normal
-			float3 *dev_vertex_normal_;
-			float3 *dev_vertex_normal_non_zero;
-			float3 *vertex_normal_;
-			//Output Vertex
-			float3 *dev_vertex_;
-			float3 *dev_vertex_non_zero;
-			float3 *vertex_;
+			//Output Triangle
+			Triangle *dev_tri_;
+			Triangle *dev_tri_non_empty;
+			Triangle *tri_;
 
 		public:
 			__host__

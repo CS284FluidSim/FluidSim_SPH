@@ -197,6 +197,7 @@ namespace FluidSim {
 							break;
 						}
 
+			
 						glBegin(GL_TRIANGLES);
 						for (uint count_point = 0; count_point < 3; count_point++)
 						{

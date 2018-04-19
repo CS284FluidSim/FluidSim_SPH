@@ -73,7 +73,7 @@ namespace FluidSim {
 		}
 
 		__global__
-			void marching_cube_kernel(float *dev_scalar, float3* dev_pos, float3 *dev_normal, float3 *dev_vertex, float3  *dev_vertex_normal, MarchingCubeParam *dev_param)
+			void marching_cube_kernel(float *dev_scalar, float3* dev_pos, float3 *dev_normal, Triangle *dev_tri, MarchingCubeParam *dev_param)
 		{
 			uint global_index = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -83,7 +83,7 @@ namespace FluidSim {
 
 				uint count_z = global_index / (dev_param->dim_vox.x*dev_param->dim_vox.y);
 				uint count_y = num_xy / dev_param->dim_vox.x;
-				uint count_x = num_xy%dev_param->dim_vox.x;
+				uint count_x = num_xy % dev_param->dim_vox.x;
 
 				float cube_value[8];
 				float3 cube_pos[8];
@@ -220,19 +220,23 @@ namespace FluidSim {
 
 					}
 				}
-				
+
 				for (uint count_triangle = 0; count_triangle < 5; count_triangle++)
 				{
+
 					if (dev_param->triangle_table[flag_index][3 * count_triangle] < 0)
 					{
-						break;
+						return;
 					}
+
+					uint idx = 5 * global_index + count_triangle;
+					dev_tri[idx].valid = 1.f;
 
 					for (uint count_point = 0; count_point < 3; count_point++)
 					{
 						index = dev_param->triangle_table[flag_index][3 * count_triangle + count_point];
-						dev_vertex_normal[3 * global_index + count_point] = make_float3(0, 1, 0);//edge_norm[index];
-						dev_vertex[3 * global_index + count_point] = make_float3(edge_vertex[index].x*dev_param->sim_ratio.x + dev_param->origin.x,
+						dev_tri[idx].n[count_point] = edge_norm[index];
+						dev_tri[idx].v[count_point] = make_float3(edge_vertex[index].x*dev_param->sim_ratio.x + dev_param->origin.x,
 							edge_vertex[index].y*dev_param->sim_ratio.y + dev_param->origin.y,
 							edge_vertex[index].z*dev_param->sim_ratio.z + dev_param->origin.z);
 					}
@@ -251,32 +255,26 @@ namespace FluidSim {
 			param_->step = step;
 			param_->isovalue = isovalue;
 
-			vertex_ = (float3 *)malloc(sizeof(float3) * param_->tot_vox*3);
-			vertex_normal_ = (float3 *)malloc(sizeof(float3) * param_->tot_vox*3);
+			tri_ = (Triangle *)malloc(sizeof(Triangle) * param_->tot_vox*5);
 			cudaMalloc(&dev_param_, sizeof(MarchingCubeParam));
 			cudaMalloc(&dev_pos_, sizeof(float3)*param_->tot_vox);
 			cudaMalloc(&dev_scalar_, sizeof(float)*param_->tot_vox);
 			cudaMalloc(&dev_normal_, sizeof(float3)*param_->tot_vox);
-			cudaMalloc(&dev_vertex_, sizeof(float3)*param_->tot_vox*3);
-			//cudaMalloc(&dev_vertex_non_zero, sizeof(float3)*param_->tot_vox);
-			cudaMalloc(&dev_vertex_normal_, sizeof(float3)*param_->tot_vox*3);
-			//cudaMalloc(&dev_vertex_normal_non_zero, sizeof(float3)*param_->tot_vox);
+			cudaMalloc(&dev_tri_, sizeof(Triangle)*param_->tot_vox*5);
+			cudaMalloc(&dev_tri_non_empty, sizeof(Triangle)*param_->tot_vox*5);
 		}
 
 		__host__
 			MarchingCube::~MarchingCube()
 		{
-			free(vertex_);
-			free(vertex_normal_);
+			free(tri_);
 			delete param_;
 			cudaFree(dev_param_);
 			cudaFree(dev_pos_);
 			cudaFree(dev_scalar_);
 			cudaFree(dev_normal_);
-			cudaFree(dev_vertex_);
-			cudaFree(dev_vertex_non_zero);
-			cudaFree(dev_vertex_normal_);
-			cudaFree(dev_vertex_normal_non_zero);
+			cudaFree(dev_tri_);
+			cudaFree(dev_tri_non_empty);
 		}
 
 		__host__
@@ -303,40 +301,43 @@ namespace FluidSim {
 
 			cudaMemset(dev_scalar_, 0, sizeof(float)*param_->tot_vox);
 			cudaMemset(dev_normal_, 0, sizeof(float3)*param_->tot_vox);
-			cudaMemset(dev_vertex_, 0, sizeof(float3)*param_->tot_vox*3);
-			cudaMemset(dev_vertex_normal_, 0, sizeof(float3)*param_->tot_vox*3);
+			cudaMemset(dev_tri_, 0, sizeof(Triangle)*param_->tot_vox*5);
 
 			calc_scalar_kernel << <num_blocks, num_threads >> > (dev_particles, dev_scalar_, dev_pos_, dev_param_);
 
-			marching_cube_kernel << <num_blocks, num_threads >> > (dev_scalar_, dev_pos_, dev_normal_, dev_vertex_, dev_vertex_normal_, dev_param_);
+			marching_cube_kernel << <num_blocks, num_threads >> > (dev_scalar_, dev_pos_, dev_normal_, dev_tri_, dev_param_);
 		}
 
 		__host__
 			void MarchingCube::render()
 		{
-			//cudaMemset(dev_vertex_non_zero, 0, sizeof(float3)*param_->tot_vox);
-			//cudaMemset(dev_vertex_normal_non_zero, 0, sizeof(float3)*param_->tot_vox);
-			//thrust::copy_if(thrust::device_ptr<float3>(dev_vertex_), thrust::device_ptr<float3>(dev_vertex_ + param_->tot_vox), thrust::device_ptr<float3>(dev_vertex_non_zero), is_zero_3f());
-			//cudaMemcpy(vertex_, dev_vertex_non_zero, sizeof(float3)*param_->tot_vox, cudaMemcpyDeviceToHost);
-			//thrust::copy_if(thrust::device_ptr<float3>(dev_vertex_normal_), thrust::device_ptr<float3>(dev_vertex_normal_ + param_->tot_vox), thrust::device_ptr<float3>(dev_vertex_normal_non_zero), is_zero_3f());
-			//cudaMemcpy(vertex_normal_, dev_vertex_normal_non_zero, sizeof(float3)*param_->tot_vox, cudaMemcpyDeviceToHost);
-			
-			cudaMemcpy(vertex_, dev_vertex_, sizeof(float3)*param_->tot_vox*3, cudaMemcpyDeviceToHost);
-			cudaMemcpy(vertex_normal_, dev_vertex_normal_, sizeof(float3)*param_->tot_vox*3, cudaMemcpyDeviceToHost);
+			memset(tri_, 0, sizeof(Triangle)*param_->tot_vox * 5);
+			cudaMemset(dev_tri_non_empty, 0, sizeof(Triangle)*param_->tot_vox*5);
+			thrust::copy_if(thrust::device_ptr<Triangle>(dev_tri_), thrust::device_ptr<Triangle>(dev_tri_ + param_->tot_vox*5), thrust::device_ptr<Triangle>(dev_tri_non_empty), is_non_empty_tri());
+			cudaMemcpy(tri_, dev_tri_non_empty, sizeof(Triangle)*param_->tot_vox*5, cudaMemcpyDeviceToHost);
+
+			is_non_empty_tri non_empty;
 
 			for (int i = 0; i<param_->tot_vox; i++)
 			{
-				int idx = 3 * i;
-				if ((vertex_[idx].x == 0.f&&vertex_[idx].y == 0.f&&vertex_[idx].z == 0.f)
-					&&(vertex_normal_[idx].x == 0.f&&vertex_normal_[idx].y == 0.f&&vertex_normal_[idx].z == 0.f))
-					continue;
+				if (!non_empty(tri_[i]))
+					break;
 				else
 				{
 					glBegin(GL_TRIANGLES);
 					for (int j = 0; j < 3; ++j)
 					{
-						glNormal3f(vertex_normal_[idx+j].x, vertex_normal_[idx+j].y, vertex_normal_[idx+j].z);
-						glVertex3f(vertex_[idx+j].x, vertex_[idx+j].y, vertex_[idx+j].z);
+						if (tri_[i].n[j].x == 0 && tri_[i].n[j].y == 0 && tri_[i].n[j].z == 0)
+						{
+							//std::cout << tri_[i].v[j].x << " "<< tri_[i].v[j].y<< " "<< tri_[i].v[j].z << std::endl;
+							glColor3f(0.f, 1.f, 0.f);
+						}
+						else
+						{
+							glColor3f(1.f, 0.f, 0.f);
+						}
+						glNormal3f(tri_[i].n[j].x, tri_[i].n[j].y, tri_[i].n[j].z);
+						glVertex3f(tri_[i].v[j].x, tri_[i].v[j].y, tri_[i].v[j].z);
 					}
 					glEnd();
 				}
