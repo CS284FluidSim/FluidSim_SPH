@@ -2,7 +2,7 @@
 #ifdef BUILD_CUDA
 #include "fluidsim_system_gpu.cuh"
 #else
-#include "fluidsim_system.h"
+#include "fluidsim_pci_system.h"
 #include <eigen3\Eigen\Dense>
 #endif
 #include <GL\glew.h>
@@ -13,9 +13,9 @@
 
 #pragma comment(lib, "glew32.lib") 
 
-FluidSim::SimulateSystem *simsystem;
+FluidSimPCI::SimulateSystem *simsystem;
 
-FluidSim::Timer *timer;
+FluidSimPCI::Timer *timer;
 char *window_title;
 
 GLuint v;
@@ -64,7 +64,7 @@ void set_shaders()
 	char c;
 	int count;
 
-	fp = fopen("F:/VisualStudioProjects/FluidSimulation/FluidSim_SPH/Shader/shader.vs", "r");
+	fp = fopen("C:/Users/chang/Desktop/FluidSim_SPH/Shader/shader.vs", "r");
 	count = 0;
 	while ((c = fgetc(fp)) != EOF)
 	{
@@ -73,7 +73,7 @@ void set_shaders()
 	}
 	fclose(fp);
 
-	fp = fopen("F:/VisualStudioProjects/FluidSimulation/FluidSim_SPH/Shader/shader.fs", "r");
+	fp = fopen("C:/Users/chang/Desktop/FluidSim_SPH/Shader/shader.fs", "r");
 	count = 0;
 	while ((c = fgetc(fp)) != EOF)
 	{
@@ -173,7 +173,7 @@ void draw_box(float ox, float oy, float oz, float width, float height, float len
 
 void init_sph_system()
 {
-	simsystem = new FluidSim::SimulateSystem();
+	simsystem = new FluidSimPCI::SimulateSystem();
 #ifdef BUILD_CUDA
 	real_world_origin.x = -10.0f;
 	real_world_origin.y = -10.0f;
@@ -195,7 +195,7 @@ void init_sph_system()
 
 	simsystem->add_cube_fluid(Vector3f(0.f,0.f,0.f), Vector3f(0.6f, 0.6f, 0.6f));
 #endif
-	timer = new FluidSim::Timer();
+	timer = new FluidSimPCI::Timer();
 	window_title = (char *)malloc(sizeof(char) * 50);
 }
 
@@ -236,29 +236,29 @@ void render_particles()
 
 #ifdef BUILD_CUDA
 	float3 color;
-	float3 pos;
+	float3 curr_pos;
 #else
 	Vector3f color;
 	Vector3f pos;
 #endif
 
-	FluidSim::Particle *particles = simsystem->get_particles();
+	FluidSimPCI::Particle *particles = simsystem->get_particles();
 
 	for (unsigned int i = 0; i<simsystem->get_num_particles(); i++)
 	{
 #ifdef BUILD_CUDA
-		color = make_float3(particles[i].vel.x*10.f, particles[i].vel.y*10.f, particles[i].vel.z*10.f);
+		color = make_float3(particles[i].curr_vel.x*10.f, particles[i].curr_vel.y*10.f, particles[i].curr_vel.z*10.f);
 		glColor3f(color.x, color.y, color.z);
 		glBegin(GL_POINTS);
-		pos.x = particles[i].pos.x*sim_ratio.x + real_world_origin.x;
-		pos.y = particles[i].pos.y*sim_ratio.y + real_world_origin.y;
-		pos.z = particles[i].pos.z*sim_ratio.z + real_world_origin.z;
-		glVertex3f(pos.x, pos.y, pos.z);
+		curr_pos.x = particles[i].curr_pos.x*sim_ratio.x + real_world_origin.x;
+		curr_pos.y = particles[i].curr_pos.y*sim_ratio.y + real_world_origin.y;
+		curr_pos.z = particles[i].curr_pos.z*sim_ratio.z + real_world_origin.z;
+		glVertex3f(curr_pos.x, curr_pos.y, curr_pos.z);
 #else
-		color = particles[i].vel*10.f;
+		color = particles[i].curr_vel*10.f;
 		glColor3f(color(0), color(1), color(2));
 		glBegin(GL_POINTS);
-		pos = particles[i].pos.cwiseProduct(sim_ratio) + real_world_origin;
+		pos = particles[i].curr_pos.cwiseProduct(sim_ratio) + real_world_origin;
 		glVertex3f(pos(0), pos(1), pos(2));
 #endif
 		glEnd();

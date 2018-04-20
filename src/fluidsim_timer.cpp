@@ -1,6 +1,8 @@
 #include "fluidsim_timer.h"
 
-namespace FluidSim {
+#include <Windows.h>
+
+namespace FluidSimPCI {
 	Timer::Timer()
 	{
 		frames = 0;

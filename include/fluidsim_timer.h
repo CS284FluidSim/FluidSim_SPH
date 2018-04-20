@@ -2,7 +2,7 @@
 #define _FLUIDSIM_TIMER_H_
 
 
-namespace FluidSim {
+namespace FluidSimPCI {
 	class Timer
 	{
 	private:
