@@ -1,3 +1,4 @@
+#include <iostream>
 #include "fluidsim_pci_system.h"
 #define PI 3.141592f
 #define LOWER_LIMIT 1E-12f
@@ -13,13 +14,14 @@ namespace FluidSimPCI {
 
 		max_particles_ = 30000;
 		kernel_ = 0.04f;
-		mass_ = 0.02f;
-		mass2_ = pow(mass_, 2);
+		rest_dens_ = 1000.f;
 		radius_ = 0.01f;
+		mass_ = rest_dens_ * pow(radius_ * 2, 3) / 1.1f;
+		mass2_ = pow(mass_, 2);
 
-		world_size_(0) = 0.16f;
-		world_size_(1) = 0.16f;
-		world_size_(2) = 0.16f;
+		world_size_(0) = 0.32f;
+		world_size_(1) = 0.32f;
+		world_size_(2) = 0.32f;
 		cell_size_ = kernel_;
 		grid_size_(0) = (int)ceil(world_size_(0) / cell_size_);
 		grid_size_(1) = (int)ceil(world_size_(1) / cell_size_);
@@ -30,7 +32,6 @@ namespace FluidSimPCI {
 		gravity_(1) = -9.8f;
 		gravity_(2) = 0.0f;
 		bound_damping_ = -0.5f;
-		rest_dens_ = 1000.f;
 		gas_const_ = 1.0f;
 		visc_ = 0.f;
 		timestep_ = 0.001f;
@@ -95,9 +96,9 @@ namespace FluidSimPCI {
 		p->force(0) = 0.0f;
 		p->force(0) = 0.0f;
 		p->force(0) = 0.0f;
-		p->damped_vel(0) = 0.0f;
-		p->damped_vel(1) = 0.0f;
-		p->damped_vel(2) = 0.0f;
+		p->curr_vel(0) = 0.0f;
+		p->curr_vel(1) = 0.0f;
+		p->curr_vel(2) = 0.0f;
 
 		p->dens = rest_dens_;
 		p->pres = 0.0f;
@@ -122,6 +123,9 @@ namespace FluidSimPCI {
 		int iter = 0;
 		while (max_dens_var_ > dens_var_limit_ || iter < min_iteration_)
 		{
+			if (max_dens_var_ > dens_var_limit_) {
+				int i = 0;
+			}
 			pred_vel_pos();
 			update_dens_var_scale();
 			pred_dens_dens_var_update_pres();
@@ -202,7 +206,9 @@ namespace FluidSimPCI {
 							rel_pos = (np->curr_pos - p->curr_pos).cast<float>();
 							r2 = rel_pos.squaredNorm();
 
-							fluidTerm += pow(kernel2_-r2, 3) * mass_; // poly6 kernel
+							if (r2 < kernel2_ && r2 > LOWER_LIMIT) {
+								fluidTerm += pow(kernel2_ - r2, 3) * mass_; // poly6 kernel
+							}
 
 							// Add boundary term
 							np = np->next;
@@ -248,6 +254,15 @@ namespace FluidSimPCI {
 			p = &(particles_[i]);
 			cell_pos = calc_cell_pos(p->curr_pos);
 
+			p->force(0) = 0.0f;
+			p->force(1) = 0.0f;
+			p->force(2) = 0.0f;
+
+			grad_color(0) = 0.0f;
+			grad_color(1) = 0.0f;
+			grad_color(2) = 0.0f;
+			lplc_color = 0.0f;
+
 			for (int x = -1; x <= 1; x++)
 			{
 				for (int y = -1; y <= 1; y++)
@@ -265,14 +280,14 @@ namespace FluidSimPCI {
 						np = cells_[hash];
 						while (np != NULL)
 						{
-							rel_pos = (np->curr_pos - p->curr_pos).cast<float>();
+							rel_pos = (p->curr_pos - np->curr_pos).cast<float>();
 							r2 = rel_pos.squaredNorm();
 
 							if (r2 < kernel2_ && r2 > LOWER_LIMIT)
 							{
 								r = sqrt(r2);
 								half_V = mass_ / np->dens / 2;
-								rel_vel = np->damped_vel - p->damped_vel;
+								rel_vel = p->curr_vel - np->curr_vel;
 								kernel_r = kernel_ - r; // Viscosity laplace
 
 								viscosity += rel_vel * kernel_r / np->dens;
@@ -303,7 +318,7 @@ namespace FluidSimPCI {
 
 			if (p->surf_norm > surf_norm_)
 			{
-				p->force += surf_coef_ * lplc_color * grad_color / p->surf_norm;
+				//p->force += surf_coef_ * lplc_color * grad_color / p->surf_norm;
 			}
 		}
 	}
@@ -374,8 +389,7 @@ namespace FluidSimPCI {
 							rel_pos = (np->new_pos - p->new_pos).cast<float>();
 							r2 = rel_pos.squaredNorm();
 
-							if (r2 < kernel2_)
-							{
+							if (r2 < kernel2_ && r2 > LOWER_LIMIT) {
 								fluid_dens += pow(kernel2_ - r2, 3);
 							}
 							np = np->next;
@@ -386,12 +400,13 @@ namespace FluidSimPCI {
 			float dens = poly6_value_ * mass_ * fluid_dens;
 
 			//Add boundary density
-			
+			//std::cout << dens << std::endl;
 			float dens_var = std::max(0.f, dens - rest_dens_);
 			max_dens_var_ = std::max(max_dens_var_, dens_var);
 			avg_dens_var_ += dens_var;
 
 			p->pres += dens_var_scale_ * dens_var;
+			//std::cout << "p->pres: " << p->pres << std::endl;
 		}
 		avg_dens_var_ /= num_particles_;
 	}
@@ -408,7 +423,7 @@ namespace FluidSimPCI {
 				{
 					Vector3f r(x, y, z);
 					float r2 = r.squaredNorm();
-					if (r2 < kernel2_) {
+					if (r2 < kernel2_  && r2 > LOWER_LIMIT) {
 						Vector3f gradient(grad_poly6_ * r * pow(kernel2_ - r2, 2)); // poly6grad
 						gradient_sum += gradient;
 						sum_squared_gradient += gradient.dot(gradient);
@@ -419,6 +434,7 @@ namespace FluidSimPCI {
 		float squared_sum_gradient = gradient_sum.dot(gradient_sum);
 		float beta = 2.f * pow(mass_ * timestep_ / rest_dens_, 2);
 		dens_var_scale_ = -1.f / (beta * (- squared_sum_gradient - sum_squared_gradient));
+		//std::cout << "dens var scale: " << dens_var_scale_ << std::endl;
 	}
 
 	void SimulateSystem::comp_pres_force()
@@ -469,10 +485,10 @@ namespace FluidSimPCI {
 						np = cells_[hash];
 						while (np != NULL)
 						{
-							rel_pos = (np->new_pos - p->new_pos).cast<float>();
+							rel_pos = (p->curr_pos - np->curr_pos).cast<float>();
 							r2 = rel_pos.squaredNorm();
 
-							if (r2 < kernel2_ && r2 > 1E-5f)
+							if (r2 < kernel2_ && r2 > LOWER_LIMIT)
 							{
 								float r = sqrt(r2);
 								pres_force -= mass2_ * (p->pres / pow(p->dens, 2) + np->pres / pow(np->dens, 2)) * spiky_value_ * rel_pos * (1.f / r) * pow(kernel_-r, 2); // spikygrad
@@ -484,6 +500,7 @@ namespace FluidSimPCI {
 				}
 			}
 			p->pres_force = pres_force;
+			//std::cout << "pres force: " << std::endl << p->pres_force << std::endl << "end pres force" << std::endl;
 		}
 	}
 
@@ -605,7 +622,7 @@ namespace FluidSimPCI {
 								temp_force = V * (p->pres + np->pres) * pres_kernel;
 								p->force -=rel_pos*temp_force / r;
 
-								rel_vel = np->damped_vel - p->damped_vel;
+								rel_vel = np->curr_vel - p->curr_vel;
 
 								visc_kernel = visco_value_*(kernel_ - r);
 								temp_force = V * visc_ * visc_kernel;
@@ -638,8 +655,11 @@ namespace FluidSimPCI {
 		for (unsigned int i = 0; i<num_particles_; i++)
 		{
 			p = &(particles_[i]);
+			//if (i == 83) {
+			//	std::cout << p->pres_force << std::endl;
+			//}
 
-			p->curr_vel += p->force * timestep_ / p->dens;
+			p->curr_vel += (p->pres_force + p->force) * timestep_ / mass_;
 			p->curr_pos += p->curr_vel * timestep_;
 
 			if (p->curr_pos(0) >= world_size_(0) - BOUNDARY)
@@ -678,7 +698,7 @@ namespace FluidSimPCI {
 				p->curr_pos(2) = 0.0f;
 			}
 
-			p->damped_vel = (p->damped_vel + p->curr_vel) / 2;
+			p->curr_vel = (p->curr_vel + p->curr_vel) / 2;
 		}
 	}
 

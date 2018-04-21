@@ -256,7 +256,7 @@ void render_particles()
 		glVertex3f(curr_pos.x, curr_pos.y, curr_pos.z);
 #else
 		color = particles[i].curr_vel*10.f;
-		glColor3f(color(0), color(1), color(2));
+		glColor3f(1, 0, 0);
 		glBegin(GL_POINTS);
 		pos = particles[i].curr_pos.cwiseProduct(sim_ratio) + real_world_origin;
 		glVertex3f(pos(0), pos(1), pos(2));
