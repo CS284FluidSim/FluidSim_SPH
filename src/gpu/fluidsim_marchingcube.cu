@@ -64,7 +64,7 @@ namespace FluidSim {
 							else
 							{
 								int index = pos_z*dev_param->dim_vox.x*dev_param->dim_vox.y + pos_y*dev_param->dim_vox.x + pos_x;
-								dev_scalar[index] = dev_particles[global_index].dens;
+								dev_scalar[index] += dev_particles[global_index].dens;
 							}
 						}
 					}

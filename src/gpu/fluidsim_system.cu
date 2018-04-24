@@ -228,10 +228,10 @@ namespace FluidSim {
 			sys_param_->bound_damping = -0.5f;
 			sys_param_->rest_dens = 1000.f;
 			sys_param_->gas_const = 1.0f;
-			sys_param_->visc = 6.5f;
+			sys_param_->visc = 16.5f;
 			sys_param_->timestep = 0.002f;
-			sys_param_->surf_norm = 6.0f;
-			sys_param_->surf_coef = 0.1f;
+			sys_param_->surf_norm = 3.0f;
+			sys_param_->surf_coef = 0.2f;
 
 			sys_param_->poly6_value = 315.0f / (64.0f * PI * pow(sys_param_->kernel, 9));
 			sys_param_->spiky_value = -45.0f / (PI * pow(sys_param_->kernel, 6));
@@ -242,7 +242,7 @@ namespace FluidSim {
 
 			sys_param_->kernel2 = sys_param_->kernel*sys_param_->kernel;
 			sys_param_->self_dens = sys_param_->mass*sys_param_->poly6_value*pow(sys_param_->kernel, 6);
-			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->kernel2*(0 - 3 / 4 * sys_param_->kernel2);
+			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->kernel2*(0 - 3.f / 4.f * sys_param_->kernel2);
 
 			cudaMalloc(&dev_sys_param_, sizeof(SysParam));
 
@@ -542,7 +542,7 @@ namespace FluidSim {
 
 						float temp = (-1) * dev_sys_param->grad_poly6 * V * pow(kernel2 - r2, 2);
 						grad_color += temp * rel_pos;
-						lplc_color += dev_sys_param->lplc_poly6 * V * (kernel2 - r2) * (r2 - 3 / 4 * (kernel2 - r2));
+						lplc_color += dev_sys_param->lplc_poly6 * V * (kernel2 - r2) * (r2 - 3.f / 4.f * (kernel2 - r2));
 					}
 				}
 			}
