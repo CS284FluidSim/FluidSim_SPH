@@ -316,8 +316,8 @@ namespace FluidSim {
 			p->vel = vel;
 
 			p->force.x = 0.0f;
-			p->force.x = 0.0f;
-			p->force.x = 0.0f;
+			p->force.y = 0.0f;
+			p->force.z = 0.0f;
 
 			p->dens = sys_param_->rest_dens;
 			p->pres = 0.0f;

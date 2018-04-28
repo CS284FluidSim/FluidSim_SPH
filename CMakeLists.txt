@@ -10,7 +10,7 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/include/)
 if(BUILD_CUDA)
 include_directories(${CMAKE_SOURCE_DIR}/include/gpu)
-enable_language(CUDA)
+find_package(CUDA REQUIRED)
 SET(SOURCE
   ${CMAKE_SOURCE_DIR}/src/gpu/fluidsim_system.cu
   ${CMAKE_SOURCE_DIR}/src/gpu/fluidsim_marchingcube.cu
@@ -24,7 +24,7 @@ SET(HEADERS
 	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_marchingcube_param.cuh
 	${CMAKE_SOURCE_DIR}/include/fluidsim_timer.h
 )
-add_library(fluidsim_sph_gpu ${SOURCE} ${HEADERS})
+cuda_add_library(fluidsim_sph_gpu ${SOURCE} ${HEADERS})
 else()
 find_package(EIGEN3 REQUIRED)
 if(EIGEN3_FOUND)
