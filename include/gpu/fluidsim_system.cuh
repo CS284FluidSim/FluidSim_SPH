@@ -2,7 +2,7 @@
 #define _FLUIDSIM_SYSTEM_CUH_
 
 #define PI 3.141592f
-#define INF 1E-12f
+#define EPS_F 1E-12f
 #define BOUNDARY 0.0001f
 
 #include <cuda_runtime.h>
@@ -22,7 +22,7 @@ namespace FluidSim {
 			uint max_particles;
 			uint num_particles;
 
-			float kernel;
+			float h;
 			float mass;
 
 			float3 world_size;
@@ -40,15 +40,14 @@ namespace FluidSim {
 			float surf_norm;
 			float surf_coef;
 
-			float poly6_value;
-			float spiky_value;
-			float visco_value;
+			float poly6;
+			float grad_spiky;
+			float lplc_visco;
 
 			float grad_poly6;
 			float lplc_poly6;
 
-			float kernel2;
-			float self_dens;
+			float h2;
 			float self_lplc_color;
 
 			float3 sim_ratio;

@@ -23,8 +23,8 @@ float light_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 float light_diffuse[] = { 0.0f, 0.5f, 1.0f, 1.0f };
 float light_position[] = { 0.0f, 20.0f, 0.0f, 1.0f };
 char *window_title;
-float window_width = 800;
-float window_height = 800;
+float window_width = 500;
+float window_height = 500;
 float xRot = 15.0f;
 float yRot = 0.0f;
 float xTrans = 0.0;
@@ -42,7 +42,7 @@ bool wireframe = false;
 bool step = false;
 
 //Simulation Parameters
-float3 world_size = { 2.56f, 1.28f, 1.28f };
+float3 world_size = { 2.56f, 2.56f, 0.64f };
 float3 real_world_side = { world_size.x * 10, world_size.y * 10, world_size.z * 10 };
 float3 real_world_origin = { -real_world_side.x / 2.f, -real_world_side.y / 2.f, -real_world_side.z / 2.f };
 float3 sim_ratio;
@@ -192,7 +192,7 @@ void init_sph_system()
 	simsystem = new FluidSim::gpu::SimulateSystem(world_size, sim_ratio, real_world_origin);
 	//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
 
-	simsystem->add_cube_fluid(make_float3(0.7f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f));
+	simsystem->add_cube_fluid(make_float3(0.7f, 0.0f, 0.0f), make_float3(1.0f, 0.4f, 1.0f));
 
 	timer = new FluidSim::Timer();
 	window_title = (char *)malloc(sizeof(char) * 50);
@@ -267,11 +267,11 @@ void render_simulation()
 			{
 				if (particles[i].surf_norm > simsystem->get_sys_pararm()->surf_norm)
 				{
-					glColor3f(1.0f, 0.0f, 0.0f);
+					glColor3f(1.0f, 0.2f, 1.0f);
 				}
 				else
 				{
-					glColor3f(0.2f, 1.0f, 0.2f);
+					glColor3f(0.2f, 2.0f, 1.0f);
 				}
 			}
 			else if (render_mode == 1)
@@ -281,8 +281,8 @@ void render_simulation()
 			}
 			else
 			{
-				float3 vel = particles[i].vel;
-				glColor3f(vel.x*10.f, vel.y*10.f, vel.z*10.f);
+				float3 vel = particles[i].force/100.f;
+				glColor3f((vel.x+1)/2.f, (vel.y + 1) / 2.f, (vel.z + 1) / 2.f);
 			}
 			glBegin(GL_POINTS);
 			pos.x = particles[i].pos.x*sim_ratio.x + real_world_origin.x;
