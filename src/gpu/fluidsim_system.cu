@@ -241,8 +241,14 @@ namespace FluidSim {
 			sys_param_->grad_poly6 = -945 / (32 * PI * pow(sys_param_->h, 9));
 			sys_param_->lplc_poly6 = 945 / (8 * PI * pow(sys_param_->h, 9));
 
+<<<<<<< HEAD
 			sys_param_->h2 = sys_param_->h*sys_param_->h;
 			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->h2*(0 - 3.f / 4.f * sys_param_->h2);
+=======
+			sys_param_->kernel2 = sys_param_->kernel*sys_param_->kernel;
+			sys_param_->self_dens = sys_param_->mass*sys_param_->poly6_value*pow(sys_param_->kernel, 6);
+			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->kernel2*(0 - 3.f / 4.f * sys_param_->kernel2);
+>>>>>>> 7110582f702e128b7b4e06c0291dba71dc542b56
 
 			cudaMalloc(&dev_sys_param_, sizeof(SysParam));
 
