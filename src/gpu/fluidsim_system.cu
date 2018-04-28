@@ -206,15 +206,17 @@ namespace FluidSim {
 		}
 
 		__host__
-			SimulateSystem::SimulateSystem(float3 world_size, float3 sim_ratio, float3 world_origin)
+			SimulateSystem::SimulateSystem(float3 world_size, float3 sim_ratio, float3 world_origin,
+				int max_particles, float h, float mass, float3 gravity, float bound_damping, 
+				float rest_dens, float gas_const, float visc, float timestep, float surf_norm, float surf_coef)
 		{
 			sys_running_ = false;
 			sys_param_ = new SysParam();
 			sys_param_->num_particles = 0;
 
-			sys_param_->max_particles = 500000;
-			sys_param_->h = 0.04f;
-			sys_param_->mass = 0.02f;
+			sys_param_->max_particles = max_particles;
+			sys_param_->h = h;
+			sys_param_->mass = mass;
 
 			sys_param_->world_size = world_size;
 			sys_param_->cell_size = sys_param_->h;
@@ -223,16 +225,14 @@ namespace FluidSim {
 			sys_param_->grid_size.z = (int)ceil(sys_param_->world_size.z / sys_param_->cell_size);
 			sys_param_->total_cells = sys_param_->grid_size.x*sys_param_->grid_size.y*sys_param_->grid_size.z;
 
-			sys_param_->gravity.x = 0.f;
-			sys_param_->gravity.y = -9.8f;
-			sys_param_->gravity.z = 0.0f;
-			sys_param_->bound_damping = -0.5f;
-			sys_param_->rest_dens = 1000.f;
-			sys_param_->gas_const = 1.0f;
-			sys_param_->visc = 16.5f;
-			sys_param_->timestep = 0.002f;
-			sys_param_->surf_norm = 3.0f;
-			sys_param_->surf_coef = 0.2f;
+			sys_param_->gravity = gravity;
+			sys_param_->bound_damping = bound_damping;
+			sys_param_->rest_dens = rest_dens;
+			sys_param_->gas_const = gas_const;
+			sys_param_->visc = visc;
+			sys_param_->timestep = timestep;
+			sys_param_->surf_norm = surf_norm;
+			sys_param_->surf_coef = surf_coef;
 
 			sys_param_->poly6 = 315.0f / (64.0f * PI * pow(sys_param_->h, 9));
 			sys_param_->grad_spiky = -45.0f / (PI * pow(sys_param_->h, 6));
@@ -241,14 +241,8 @@ namespace FluidSim {
 			sys_param_->grad_poly6 = -945 / (32 * PI * pow(sys_param_->h, 9));
 			sys_param_->lplc_poly6 = 945 / (8 * PI * pow(sys_param_->h, 9));
 
-<<<<<<< HEAD
 			sys_param_->h2 = sys_param_->h*sys_param_->h;
 			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->h2*(0 - 3.f / 4.f * sys_param_->h2);
-=======
-			sys_param_->kernel2 = sys_param_->kernel*sys_param_->kernel;
-			sys_param_->self_dens = sys_param_->mass*sys_param_->poly6_value*pow(sys_param_->kernel, 6);
-			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->kernel2*(0 - 3.f / 4.f * sys_param_->kernel2);
->>>>>>> 7110582f702e128b7b4e06c0291dba71dc542b56
 
 			cudaMalloc(&dev_sys_param_, sizeof(SysParam));
 

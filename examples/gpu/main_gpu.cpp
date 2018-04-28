@@ -1,5 +1,7 @@
-#include <GL\glew.h>
-#include <GL\freeglut.h>
+#include <GL/glew.h>
+#include <GL/freeglut.h>
+
+#include <opencv2/opencv.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -7,15 +9,12 @@
 #include "fluidsim_timer.h"
 #include "gpu/fluidsim_system.cuh"
 #include "gpu/fluidsim_marchingcube.cuh"
-#include "fluidsim_marchingcube.h"
-
 
 #pragma comment(lib, "glew32.lib") 
 #define GPU_MC
 
 //Somulation system global variable
 FluidSim::gpu::SimulateSystem *simsystem;
-FluidSim::MarchingCube *marchingcube;
 FluidSim::Timer *timer;
 
 //OpenGL global variable
@@ -42,21 +41,10 @@ bool wireframe = false;
 bool step = false;
 
 //Simulation Parameters
-float3 world_size = { 2.56f, 2.56f, 0.64f };
+float3 world_size = { 1.28f, 1.28f, 1.28f };
 float3 real_world_side = { world_size.x * 10, world_size.y * 10, world_size.z * 10 };
 float3 real_world_origin = { -real_world_side.x / 2.f, -real_world_side.y / 2.f, -real_world_side.z / 2.f };
 float3 sim_ratio;
-
-//Marching Cubes Parameters
-float vox_size = 0.01f;
-int row_vox = world_size.x / vox_size;
-int col_vox = world_size.y / vox_size;
-int len_vox = world_size.z / vox_size;
-int tot_vox = row_vox*col_vox*len_vox;
-float3* model_vox_init;
-float *model_scalar_init;
-float3* model_vox;
-float *model_scalar;
 
 //Shaders
 GLuint v;
@@ -185,47 +173,72 @@ void draw_box(float ox, float oy, float oz, float width, float height, float len
 	glEnd();
 }
 
-void init_sph_system()
+void init_sph_system(std::string config_path)
 {
 	sim_ratio = real_world_side / world_size;
 
-	simsystem = new FluidSim::gpu::SimulateSystem(world_size, sim_ratio, real_world_origin);
-	//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
+	if (config_path != "")
+	{
+		cv::FileStorage fs;
+		fs.open(config_path, cv::FileStorage::READ);
+		if (!fs.isOpened())
+		{
+			std::cout << "Error: cannot open configuration file" << std::endl;
+			exit(0);
+		}
 
-	simsystem->add_cube_fluid(make_float3(0.7f, 0.0f, 0.0f), make_float3(1.0f, 0.4f, 1.0f));
+		fs["world_size.x"] >> world_size.x;
+		fs["world_size.y"] >> world_size.y;
+		fs["world_size.z"] >> world_size.z;
+		real_world_side = { world_size.x * 10, world_size.y * 10, world_size.z * 10 };
+		real_world_origin = { -real_world_side.x / 2.f, -real_world_side.y / 2.f, -real_world_side.z / 2.f };
+		sim_ratio = real_world_side / world_size;
+
+		int max_particles = 500000;
+		fs["max_particles"] >> max_particles;
+		float h = 0.04f;
+		fs["h"] >> h;
+		float mass = 0.02f;
+		fs["mass"] >> mass;
+		float3 gravity = { 0.f,-9.8f,0.f };
+		fs["gravity.x"] >> gravity.x;
+		fs["gravity.y"] >> gravity.y;
+		fs["gravity.z"] >> gravity.z;
+		float bound_damping = -0.5f;
+		fs["bound_damping"] >> bound_damping;
+		float rest_dens = 1000.f;
+		fs["rest_dens"] >> rest_dens;
+		float gas_const = 1.f;
+		fs["gas_const"] >> gas_const;
+		float visc = 6.5f;
+		fs["visc"] >> visc;
+		float timestep = 0.002f; 
+		fs["timestep"] >> timestep;
+		float surf_norm = 3.f; 
+		fs["surf_norm"] >> surf_norm;
+		float surf_coef = 0.2f;
+		fs["surf_coef"] >> surf_coef;
+		simsystem = new FluidSim::gpu::SimulateSystem(world_size, sim_ratio, real_world_origin, max_particles,
+			h, mass, gravity, bound_damping, rest_dens, gas_const, visc, timestep, surf_norm, surf_coef);
+
+		float3 cube_min;
+		fs["cube_min.x"] >> cube_min.x;
+		fs["cube_min.y"] >> cube_min.y;
+		fs["cube_min.z"] >> cube_min.z;
+		float3 cube_max;
+		fs["cube_max.x"] >> cube_max.x;
+		fs["cube_max.y"] >> cube_max.y;
+		fs["cube_max.z"] >> cube_max.z;
+		simsystem->add_cube_fluid(cube_min, cube_max);
+	}
+	else
+	{
+		simsystem = new FluidSim::gpu::SimulateSystem(world_size, sim_ratio, real_world_origin);
+		simsystem->add_cube_fluid(make_float3(0.7f, 0.0f, 0.0f), make_float3(1.0f, 0.4f, 1.0f));
+	}
 
 	timer = new FluidSim::Timer();
 	window_title = (char *)malloc(sizeof(char) * 50);
-}
-
-void init_marching_cube()
-{
-	int tot_vox = row_vox*col_vox*len_vox;
-
-	model_vox = (float3 *)malloc(sizeof(float3)*row_vox*col_vox*len_vox);
-	model_scalar = (float *)malloc(sizeof(float)*row_vox*col_vox*len_vox);
-
-	model_vox_init = (float3 *)malloc(sizeof(float3)*row_vox*col_vox*len_vox);
-	model_scalar_init = (float *)malloc(sizeof(float)*row_vox*col_vox*len_vox);
-
-	for (int count_x = 0; count_x < row_vox; count_x++)
-	{
-		for (int count_y = 0; count_y < col_vox; count_y++)
-		{
-			for (int count_z = 0; count_z < len_vox; count_z++)
-			{
-				int index = count_z*row_vox*col_vox + count_y*row_vox + count_x;
-
-				model_vox_init[index].x = count_x*vox_size;
-				model_vox_init[index].y = count_y*vox_size;
-				model_vox_init[index].z = count_z*vox_size;
-
-				model_scalar_init[index] = 0;
-			}
-		}
-	}
-
-	marchingcube = new FluidSim::MarchingCube(row_vox, col_vox, len_vox, model_scalar, model_vox, sim_ratio, real_world_origin, vox_size, simsystem->get_sys_pararm()->rest_dens);
 }
 
 void init()
@@ -297,42 +310,6 @@ void render_simulation()
 
 		if (simsystem->is_running())
 		{
-#ifndef GPU_MC
-			FluidSim::gpu::Particle *particles = simsystem->get_particles();
-
-			memcpy(model_vox, model_vox_init, sizeof(float3)*tot_vox);
-			memcpy(model_scalar, model_scalar_init, sizeof(float)*tot_vox);
-
-			float radius = 0.02f;
-
-			for (int i = 0; i < simsystem->get_num_particles(); ++i)
-			{
-				int cell_pos_x = (particles[i].pos.x) / vox_size;
-				int cell_pos_y = (particles[i].pos.y) / vox_size;
-				int cell_pos_z = (particles[i].pos.z) / vox_size;
-				for (float x = -radius; x < radius; x+=vox_size)
-				{
-					for (float y = -radius; y < radius; y+=vox_size)
-					{
-						for (float z = -radius; z < radius; z+=vox_size)
-						{
-								int pos_x = cell_pos_x + x / vox_size;
-								int pos_y = cell_pos_y + y / vox_size;
-								int pos_z = cell_pos_z + z / vox_size;
-								if (pos_x < 0 || pos_x >= row_vox ||
-									pos_y < 0 || pos_y >= col_vox ||
-									pos_z < 0 || pos_z >= len_vox)
-									continue;
-								else
-								{
-									int index = pos_z*row_vox*col_vox + pos_y*row_vox + pos_x;
-									model_scalar[index] = 1000;
-								}
-						}
-					}
-				}
-			}
-#endif
 			if (mc_render_mode == 0)
 			{
 				glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient);
@@ -341,9 +318,6 @@ void render_simulation()
 				glEnable(GL_LIGHT1);
 				glEnable(GL_LIGHTING);
 			}
-#ifndef GPU_MC
-			marchingcube->run();
-#else
 			FluidSim::gpu::MarchingCube::RenderMode rm;
 			switch (mc_render_mode)
 			{
@@ -353,7 +327,6 @@ void render_simulation()
 				case 3:rm = FluidSim::gpu::MarchingCube::RenderMode::POS; break;
 			}
 			simsystem->render(rm);
-#endif
 			if (mc_render_mode == 0)
 			{
 				glDisable(GL_LIGHTING);
@@ -522,9 +495,10 @@ int main(int argc, char **argv)
 	(void)glutCreateWindow("GLUT Program");
 
 	init();
-	init_sph_system();
-	init_marching_cube();
-
+	if (argc == 2)
+		init_sph_system(argv[1]);
+	else
+		init_sph_system("");
 	//set_shaders();
 	//glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
 	//glEnable(GL_POINT_SPRITE_ARB);
