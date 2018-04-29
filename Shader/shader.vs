@@ -1,12 +1,10 @@
-attribute vec3 position;
-attribute vec3 normal;
 
-varying vec3 fPosition;
-varying vec3 fNormal;
+varying vec3 N;
+varying vec3 v;
 
 void main() {
 	// TODO: Part 5.1
-    fPosition = (gl_ModelViewMatrix*vec4(position, 1.0)).xyz;
-    fNormal = gl_Normal;
-    gl_Position = gl_ModelViewProjectionMatrix*vec4(position, 1.0);
+	v = vec3(gl_ModelViewMatrix * gl_Vertex);
+	N = normalize(gl_NormalMatrix * gl_Normal);
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 }

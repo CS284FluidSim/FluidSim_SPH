@@ -167,7 +167,7 @@ namespace FluidSim {
 			p->vel = p->vel + acc*dev_sys_param->timestep;
 			p->pos = p->pos + p->vel*dev_sys_param->timestep;
 
-			if (p->pos.x >= dev_sys_param->world_size.x - BOUNDARY)
+			if (p->pos.x > dev_sys_param->world_size.x - BOUNDARY)
 			{
 				p->vel.x = p->vel.x*dev_sys_param->bound_damping;
 				p->pos.x = dev_sys_param->world_size.x - BOUNDARY;
@@ -176,10 +176,10 @@ namespace FluidSim {
 			if (p->pos.x < 0.0f)
 			{
 				p->vel.x = p->vel.x*dev_sys_param->bound_damping;
-				p->pos.x = 0.0f;
+				p->pos.x = BOUNDARY;
 			}
 
-			if (p->pos.y >= dev_sys_param->world_size.y - BOUNDARY)
+			if (p->pos.y > dev_sys_param->world_size.y - BOUNDARY)
 			{
 				p->vel.y = p->vel.y*dev_sys_param->bound_damping;
 				p->pos.y = dev_sys_param->world_size.y - BOUNDARY;
@@ -188,10 +188,10 @@ namespace FluidSim {
 			if (p->pos.y < 0.0f)
 			{
 				p->vel.y = p->vel.y*dev_sys_param->bound_damping;
-				p->pos.y = 0.0f;
+				p->pos.y = BOUNDARY;
 			}
 
-			if (p->pos.z >= dev_sys_param->world_size.z - BOUNDARY)
+			if (p->pos.z > dev_sys_param->world_size.z - BOUNDARY)
 			{
 				p->vel.z = p->vel.z*dev_sys_param->bound_damping;
 				p->pos.z = dev_sys_param->world_size.z - BOUNDARY;
@@ -200,7 +200,7 @@ namespace FluidSim {
 			if (p->pos.z < 0.0f)
 			{
 				p->vel.z = p->vel.z*dev_sys_param->bound_damping;
-				p->pos.z = 0.0f;
+				p->pos.z = BOUNDARY;
 			}
 
 		}

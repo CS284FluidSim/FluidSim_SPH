@@ -18,9 +18,14 @@ FluidSim::gpu::SimulateSystem *simsystem;
 FluidSim::Timer *timer;
 
 //OpenGL global variable
+//light
+float light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 float light_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 float light_diffuse[] = { 0.0f, 0.5f, 1.0f, 1.0f };
 float light_position[] = { 0.0f, 20.0f, 0.0f, 1.0f };
+//material
+float mat_specular[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+
 char *window_title;
 float window_width = 500;
 float window_height = 500;
@@ -266,6 +271,7 @@ void render_simulation()
 
 	if (render_mode != 3)
 	{
+		glUseProgram(0);
 		glPointSize(1.0f);
 		glColor3f(0.2f, 0.2f, 1.0f);
 
@@ -307,15 +313,16 @@ void render_simulation()
 	}
 	else
 	{
-
+		glUseProgram(p);
 		if (simsystem->is_running())
 		{
 			if (mc_render_mode == 0)
 			{
-				glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient);
-				glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
-				glLightfv(GL_LIGHT1, GL_POSITION, light_position);
-				glEnable(GL_LIGHT1);
+				glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+				glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+				glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+				glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+				glEnable(GL_LIGHT0);
 				glEnable(GL_LIGHTING);
 			}
 			FluidSim::gpu::MarchingCube::RenderMode rm;
@@ -326,12 +333,14 @@ void render_simulation()
 				case 2:rm = FluidSim::gpu::MarchingCube::RenderMode::NORMAL; break;
 				case 3:rm = FluidSim::gpu::MarchingCube::RenderMode::POS; break;
 			}
+			glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 			simsystem->render(rm);
 			if (mc_render_mode == 0)
 			{
 				glDisable(GL_LIGHTING);
 			}
 		}
+		glUseProgram(0);
 	}
 }
 
@@ -499,12 +508,13 @@ int main(int argc, char **argv)
 		init_sph_system(argv[1]);
 	else
 		init_sph_system("");
-	//set_shaders();
-	//glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
-	//glEnable(GL_POINT_SPRITE_ARB);
-	//glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
-	//glDepthMask(GL_TRUE);
-	//glEnable(GL_DEPTH_TEST);
+
+	set_shaders();
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
+	glEnable(GL_POINT_SPRITE_ARB);
+	glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
 
 	glutDisplayFunc(display_func);
 	glutReshapeFunc(reshape_func);
