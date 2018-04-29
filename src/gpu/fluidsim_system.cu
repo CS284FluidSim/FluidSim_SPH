@@ -286,7 +286,7 @@ namespace FluidSim {
 		}
 
 		__host__
-			void SimulateSystem::add_cube_fluid(const float3 &pos_min, const float3 &pos_max)
+			void SimulateSystem::add_cube_fluid(const float3 &pos_min, const float3 &pos_max, const float gap)
 		{
 			float3 pos;
 			float3 vel;
@@ -295,16 +295,20 @@ namespace FluidSim {
 			vel.y = 0.f;
 			vel.z = 0.f;
 
-			for (pos.x = sys_param_->world_size.x*pos_min.x; pos.x < sys_param_->world_size.x*pos_max.x; pos.x += (sys_param_->h*0.5f))
+			for (pos.x = sys_param_->world_size.x*pos_min.x; pos.x < sys_param_->world_size.x*pos_max.x; pos.x += (sys_param_->h*gap))
 			{
-				for (pos.y = sys_param_->world_size.y*pos_min.y; pos.y < sys_param_->world_size.y*pos_max.y; pos.y += (sys_param_->h*0.5f))
+				for (pos.y = sys_param_->world_size.y*pos_min.y; pos.y < sys_param_->world_size.y*pos_max.y; pos.y += (sys_param_->h*gap))
 				{
-					for (pos.z = sys_param_->world_size.z*pos_min.z; pos.z < sys_param_->world_size.z*pos_max.z; pos.z += (sys_param_->h*0.5f))
+					for (pos.z = sys_param_->world_size.z*pos_min.z; pos.z < sys_param_->world_size.z*pos_max.z; pos.z += (sys_param_->h*gap))
 					{
 						add_particle(pos, vel);
 					}
 				}
 			}
+
+			cudaMemcpy(dev_particles_, particles_, sys_param_->num_particles * sizeof(Particle), cudaMemcpyHostToDevice);
+			cudaMemcpy(dev_sys_param_, sys_param_, sizeof(SysParam), cudaMemcpyHostToDevice);
+			marchingCube_->init(sys_param_->num_particles);
 		}
 
 		__host__
@@ -328,7 +332,7 @@ namespace FluidSim {
 		__host__
 			void SimulateSystem::animation()
 		{
-			if (sys_running_ == 0)
+			if (sys_running_ == 0 || sys_param_->num_particles == 0)
 			{
 				return;
 			}

@@ -1,12 +1,11 @@
-#include <GL/glew.h>
-#include <GL/freeglut.h>
-
 #include <opencv2/opencv.hpp>
 
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "fluidsim_timer.h"
+#include "fluidsim_gl_utils.h"
 #include "gpu/fluidsim_system.cuh"
 #include "gpu/fluidsim_marchingcube.cuh"
 
@@ -22,7 +21,7 @@ FluidSim::Timer *timer;
 float light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 float light_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 float light_diffuse[] = { 0.0f, 0.5f, 1.0f, 1.0f };
-float light_position[] = { 0.0f, 20.0f, 0.0f, 1.0f };
+float light_position[] = { 0.0f, 50.0f, 0.0f, 1.0f };
 //material
 float mat_specular[] = { 0.6f, 0.6f, 0.6f, 1.0f };
 
@@ -52,85 +51,30 @@ float3 real_world_origin = { -real_world_side.x / 2.f, -real_world_side.y / 2.f,
 float3 sim_ratio;
 
 //Shaders
-GLuint v;
-GLuint f;
-GLuint p;
+GLuint phong_shader;
+GLuint particle_shader;
+GLuint refractive_shader;
+GLuint skybox_shader;
 
-void set_shaders()
+//VAO
+GLuint skyboxVAO;
+
+//Textures
+unsigned int cube_tex_id;
+
+using namespace std;
+using namespace FluidSim;
+
+void draw_skybox()
 {
-	char *vs = NULL;
-	char *fs = NULL;
-
-	vs = (char *)malloc(sizeof(char) * 10000);
-	fs = (char *)malloc(sizeof(char) * 10000);
-	memset(vs, 0, sizeof(char) * 10000);
-	memset(fs, 0, sizeof(char) * 10000);
-
-	FILE *fp;
-	char c;
-	int count;
-
-	fp = fopen("../shader/shader.vs", "r");
-	count = 0;
-	while ((c = fgetc(fp)) != EOF)
-	{
-		vs[count] = c;
-		count++;
-	}
-	fclose(fp);
-
-	fp = fopen("../shader/shader.fs", "r");
-	count = 0;
-	while ((c = fgetc(fp)) != EOF)
-	{
-		fs[count] = c;
-		count++;
-	}
-	fclose(fp);
-
-	v = glCreateShader(GL_VERTEX_SHADER);
-	f = glCreateShader(GL_FRAGMENT_SHADER);
-
-	const char *vv;
-	const char *ff;
-	vv = vs;
-	ff = fs;
-
-	glShaderSource(v, 1, &vv, NULL);
-	glShaderSource(f, 1, &ff, NULL);
-
-	int success;
-
-	glCompileShader(v);
-	glGetShaderiv(v, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		char info_log[5000];
-		glGetShaderInfoLog(v, 5000, NULL, info_log);
-		printf("Error in vertex shader compilation!\n");
-		printf("Info Log: %s\n", info_log);
-	}
-
-	glCompileShader(f);
-	glGetShaderiv(f, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		char info_log[5000];
-		glGetShaderInfoLog(f, 5000, NULL, info_log);
-		printf("Error in fragment shader compilation!\n");
-		printf("Info Log: %s\n", info_log);
-	}
-
-	p = glCreateProgram();
-	glAttachShader(p, v);
-	glAttachShader(p, f);
-	glLinkProgram(p);
-	glUseProgram(p);
-
-	free(vs);
-	free(fs);
+	glDepthMask(GL_FALSE);
+	glUseProgram(skybox_shader);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_tex_id);
+	glBindVertexArray(skyboxVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDepthMask(GL_TRUE);
 }
-
 
 void draw_box(float ox, float oy, float oz, float width, float height, float length)
 {
@@ -234,12 +178,14 @@ void init_sph_system(std::string config_path)
 		fs["cube_max.x"] >> cube_max.x;
 		fs["cube_max.y"] >> cube_max.y;
 		fs["cube_max.z"] >> cube_max.z;
-		simsystem->add_cube_fluid(cube_min, cube_max);
+		float gap;
+		fs["gap"] >> gap;
+		//simsystem->add_cube_fluid(cube_min, cube_max, gap);
 	}
 	else
 	{
 		simsystem = new FluidSim::gpu::SimulateSystem(world_size, sim_ratio, real_world_origin);
-		simsystem->add_cube_fluid(make_float3(0.7f, 0.0f, 0.0f), make_float3(1.0f, 0.4f, 1.0f));
+		simsystem->add_cube_fluid(make_float3(0.7f, 0.0f, 0.0f), make_float3(1.0f, 0.4f, 1.0f), 0.5f);
 	}
 
 	timer = new FluidSim::Timer();
@@ -254,16 +200,31 @@ void init()
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	gluPerspective(45.0, (float)window_width / window_height, 10.0f, 100.0);
+	gluPerspective(45.0, (float)window_width / window_height, 0.1f, 1000.f);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslatef(0.0f, 0.0f, -3.0f);
 }
 
+void init_cube_map(string cube_path)
+{
+	vector<string> texture_path;
+	texture_path.push_back(cube_path + "/posx.jpg");
+	texture_path.push_back(cube_path + "/negx.jpg");
+	texture_path.push_back(cube_path + "/posy.jpg");
+	texture_path.push_back(cube_path + "/negy.jpg");
+	texture_path.push_back(cube_path + "/posz.jpg");
+	texture_path.push_back(cube_path + "/negz.jpg");
+
+	skyboxVAO = create_cube_vao(10.f);
+	cube_tex_id = create_cube_map_tex(texture_path[0].c_str(), texture_path[1].c_str(), 
+		texture_path[2].c_str(), texture_path[3].c_str(), 
+		texture_path[4].c_str(), texture_path[5].c_str());
+}
+
 void render_simulation()
 {
-
 	if (wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	else
@@ -271,7 +232,7 @@ void render_simulation()
 
 	if (render_mode != 3)
 	{
-		glUseProgram(0);
+		glUseProgram(particle_shader);
 		glPointSize(1.0f);
 		glColor3f(0.2f, 0.2f, 1.0f);
 
@@ -310,10 +271,11 @@ void render_simulation()
 			glVertex3f(pos.x, pos.y, pos.z);
 			glEnd();
 		}
+		glUseProgram(0);
 	}
 	else
 	{
-		glUseProgram(p);
+		glUseProgram(phong_shader);
 		if (simsystem->is_running())
 		{
 			if (mc_render_mode == 0)
@@ -372,6 +334,8 @@ void display_func()
 	render_simulation();
 
 	draw_box(real_world_origin.x, real_world_origin.y, real_world_origin.z, real_world_side.x, real_world_side.y, real_world_side.z);
+
+	//draw_skybox();
 
 	glPopMatrix();
 	glutSwapBuffers();
@@ -450,6 +414,14 @@ void keyboard_func(unsigned char key, int x, int y)
 		mc_render_mode = (mc_render_mode + 1) % 4;
 	}
 
+	if (key == 'k')
+	{
+		if (simsystem->is_running())
+		{
+			simsystem->add_cube_fluid({ 0.4f,0.4f,0.4f }, { 0.5f,0.5f,0.5f }, 0.5);
+		}
+	}
+
 	if (key == 'v')
 		wireframe = !wireframe;
 
@@ -497,6 +469,9 @@ void motion_func(int x, int y)
 
 int main(int argc, char **argv)
 {
+	if (argc != 3)
+		exit(0);
+
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
@@ -504,17 +479,22 @@ int main(int argc, char **argv)
 	(void)glutCreateWindow("GLUT Program");
 
 	init();
-	if (argc == 2)
-		init_sph_system(argv[1]);
-	else
-		init_sph_system("");
+	init_cube_map(argv[2]);
+	init_sph_system(argv[1]);
 
-	set_shaders();
+	phong_shader = create_shader_program("../shader/phong.vs", "../shader/phong.fs");
+	particle_shader = create_shader_program("../shader/particle.vs", "../shader/particle.fs");
+	skybox_shader = create_shader_program("../shader/skybox.vs", "../shader/skybox.fs");
+
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
 	glEnable(GL_POINT_SPRITE_ARB);
 	glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_DEPTH_TEST);
+	//glDepthMask(GL_TRUE);
+	//glEnable(GL_DEPTH_TEST);	// enable depth-testing
+	//glDepthFunc(GL_LESS);		 // depth-testing interprets a smaller value as "closer"
+	//glEnable(GL_CULL_FACE);	// cull face
+	//glCullFace(GL_BACK);		 // cull back face
+	//glFrontFace(GL_CCW); // set counter-clock-wise vertex order to mean the front
 
 	glutDisplayFunc(display_func);
 	glutReshapeFunc(reshape_func);

@@ -63,7 +63,7 @@ namespace FluidSim {
 			__host__
 				~SimulateSystem();
 			__host__
-				void add_cube_fluid(const float3 &pos_min, const float3 &pos_max);
+				void add_cube_fluid(const float3 &pos_min, const float3 &pos_max, const float gap);
 			__host__
 				void start();
 			__host__
