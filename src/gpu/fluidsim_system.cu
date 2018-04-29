@@ -9,6 +9,10 @@
 
 #include "gpu/fluidsim_system.cuh"
 
+#include <iostream>
+#include <fstream>
+#include <string>
+
 namespace FluidSim {
 
 	namespace gpu {
@@ -151,7 +155,7 @@ namespace FluidSim {
 		}
 
 		__global__
-			void integrate_kernel(Particle* dev_particles, SysParam* dev_sys_param)
+			void integrate_kernel(Particle* dev_particles, int* dev_occupied, SysParam* dev_sys_param)
 		{
 			uint index = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -166,6 +170,14 @@ namespace FluidSim {
 			
 			p->vel = p->vel + acc*dev_sys_param->timestep;
 			p->pos = p->pos + p->vel*dev_sys_param->timestep;
+
+			int3 cell_pos = calc_cell_pos(p->pos, dev_sys_param->cell_size);
+			int cell_index = cell_pos.z*dev_sys_param->grid_size.x*dev_sys_param->grid_size.y + cell_pos.y*dev_sys_param->grid_size.x + cell_pos.x;
+			if (dev_occupied[cell_index] == 1)
+			{
+				p->vel = p->vel*dev_sys_param->bound_damping;
+				p->pos = p->pos+p->vel*0.002;
+			}
 
 			if (p->pos.x > dev_sys_param->world_size.x - BOUNDARY)
 			{
@@ -244,9 +256,14 @@ namespace FluidSim {
 			sys_param_->h2 = sys_param_->h*sys_param_->h;
 			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->h2*(0 - 3.f / 4.f * sys_param_->h2);
 
+
 			cudaMalloc(&dev_sys_param_, sizeof(SysParam));
 
 			particles_ = (Particle *)malloc(sizeof(Particle)*sys_param_->max_particles);
+			occupied_ = (int *)malloc(sizeof(int)*sys_param_->total_cells);
+			memset(occupied_, 0, sizeof(int)*sys_param_->total_cells);
+			cudaMalloc(&dev_occupied_, sys_param_->total_cells * sizeof(int));
+			cudaMemset(dev_occupied_, 0, sizeof(int)*sys_param_->total_cells);
 			cudaMalloc(&dev_particles_, sys_param_->max_particles * sizeof(Particle));
 			cudaMalloc(&dev_hash_, sizeof(uint)*sys_param_->max_particles);
 			cudaMalloc(&dev_index_, sizeof(uint)*sys_param_->max_particles);
@@ -265,9 +282,9 @@ namespace FluidSim {
 			SimulateSystem::~SimulateSystem() {
 			
 			free(particles_);
-
+			free(occupied_);
 			delete marchingCube_;
-
+			cudaFree(dev_occupied_);
 			cudaFree(dev_sys_param_);
 			cudaFree(dev_particles_);
 			cudaFree(dev_hash_);
@@ -309,6 +326,144 @@ namespace FluidSim {
 			cudaMemcpy(dev_particles_, particles_, sys_param_->num_particles * sizeof(Particle), cudaMemcpyHostToDevice);
 			cudaMemcpy(dev_sys_param_, sys_param_, sizeof(SysParam), cudaMemcpyHostToDevice);
 			marchingCube_->init(sys_param_->num_particles);
+		}
+
+		__host__
+			void SimulateSystem::add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max)
+		{
+			float3 pos;
+			float3 vel;
+
+			vel.x = 0.f;
+			vel.y = 0.f;
+			vel.z = 0.f;
+
+			for (pos.x = sys_param_->world_size.x*cube_pos_min.x; pos.x < sys_param_->world_size.x*cube_pos_max.x; pos.x += (sys_param_->h*0.5f))
+			{
+				for (pos.y = sys_param_->world_size.y*cube_pos_min.y; pos.y < sys_param_->world_size.y*cube_pos_max.y; pos.y += (sys_param_->h*0.5f))
+				{
+					for (pos.z = sys_param_->world_size.z*cube_pos_min.z; pos.z < sys_param_->world_size.z*cube_pos_max.z; pos.z += (sys_param_->h*0.5f))
+					{
+						add_particle(pos, vel);
+					}
+				}
+			}
+		}
+
+		__host__
+			void SimulateSystem::add_fluid(const float3 &sphere_pos, const float &radius)
+		{
+			float3 pos;
+			float3 vel;
+
+			vel.x = 0.f;
+			vel.y = 0.f;
+			vel.z = 0.f;
+
+			// calculate the bounding box of sphere
+			float3 pos_origin = sphere_pos * sys_param_->world_size;
+			float3 pos_min = pos_origin - make_float3(radius, radius, radius);
+			float3 pos_max = pos_origin + make_float3(radius, radius, radius);
+
+			if (pos_min.x < 0.f || pos_min.y < 0.f || pos_min.z < 0.f)
+			{
+				std::cout << "Out of bottom limit" << std::endl;
+			}
+			if (pos_max.x > sys_param_->world_size.x || pos_max.y > sys_param_->world_size.y || pos_max.z > sys_param_->world_size.z)
+			{
+				std::cout << "Out of top limit" << std::endl;
+			}
+
+			for (pos.x = pos_min.x; pos.x <= pos_max.x; pos.x += (sys_param_->h*0.5f))
+			{
+				for (pos.y = pos_min.y; pos.y <= pos_max.y; pos.y += (sys_param_->h*0.5f))
+				{
+					for (pos.z = pos_min.z; pos.z <= pos_max.z; pos.z += (sys_param_->h*0.5f))
+					{
+						if (length(pos - pos_origin) <= radius)
+						{
+							add_particle(pos, vel);
+						}
+					}
+				}
+			}
+
+		}
+
+		__host__
+			void SimulateSystem::add_fluid(const float3 &scale_const)
+		{
+			float3 pos;
+			float3 vel;
+
+			vel.x = 0.f;
+			vel.y = 0.f;
+			vel.z = 0.f;
+
+			// read object point cloud coordinate
+			std::string line;
+			std::ifstream myfile("../scene/bunny.txt");
+			if (myfile.is_open())
+			{
+				getline(myfile, line);
+
+				std::string delimiter = " ";
+				float coord;
+
+				while (getline(myfile, line))
+				{
+					std::vector<float> tmp;
+					size_t Pos = 0;
+					while ((Pos = line.find(delimiter)) != std::string::npos)
+					{
+						coord = stof(line.substr(0, Pos));
+						tmp.push_back(coord);
+						line.erase(0, Pos + delimiter.length());
+					}
+					if (line.length() != 0)
+					{
+						coord = stof(line.substr(0, line.length()));
+						tmp.push_back(coord);
+					}
+					pos.x = tmp[0] * scale_const.x + 1.5f;
+					pos.y = tmp[1] * scale_const.y;
+					pos.z = tmp[2] * scale_const.z + 0.4f;
+					if (pos.x > 0.f && pos.x < sys_param_->world_size.x && pos.y > 0.f && pos.y < sys_param_->world_size.y && pos.z > 0.f && pos.z < sys_param_->world_size.z)
+						add_particle(pos, vel);
+					
+				}
+				myfile.close();
+			}
+			else
+			{
+				std::cout << "Unable to open file!" << std::endl;
+			}
+		}
+
+		void SimulateSystem::add_static_object(const float3 & cube_pos_min, const float3 & cube_pos_max)
+		{
+			if (is_running())
+			{
+				std::cout << "Cannot add static objects while system is running" << std::endl;
+				return;
+			}
+
+			float3 pos;
+			int count = 0;
+			for (pos.x = sys_param_->world_size.x*cube_pos_min.x; pos.x < sys_param_->world_size.x*cube_pos_max.x; pos.x += sys_param_->cell_size)
+			{
+				for (pos.y = sys_param_->world_size.y*cube_pos_min.y; pos.y < sys_param_->world_size.y*cube_pos_max.y; pos.y += sys_param_->cell_size)
+				{
+					for (pos.z = sys_param_->world_size.z*cube_pos_min.z; pos.z < sys_param_->world_size.z*cube_pos_max.z; pos.z += sys_param_->cell_size)
+					{
+						int3 cell_pos = calc_cell_pos(pos, sys_param_->cell_size);
+						int index = cell_pos.z*sys_param_->grid_size.x*sys_param_->grid_size.y + cell_pos.y*sys_param_->grid_size.x + cell_pos.x;
+						occupied_[index] = 1;
+					}
+				}
+			}
+
+			cudaMemcpy(dev_occupied_, occupied_, sizeof(int)*sys_param_->total_cells, cudaMemcpyHostToDevice);
 		}
 
 		__host__
@@ -402,7 +557,7 @@ namespace FluidSim {
 			uint num_blocks;
 			calc_grid_size(sys_param_->num_particles, 512, num_blocks, num_threads);
 
-			integrate_kernel << < num_blocks, num_threads >> > (dev_particles_, dev_sys_param_);
+			integrate_kernel << < num_blocks, num_threads >> > (dev_particles_, dev_occupied_, dev_sys_param_);
 		}
 
 		__device__ __forceinline__

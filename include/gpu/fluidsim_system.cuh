@@ -12,6 +12,9 @@
 
 #include "gpu/fluidsim_marchingcube.cuh"
 
+#include <fstream>
+#include <string>
+
 namespace FluidSim {
 
 	namespace gpu {
@@ -54,6 +57,18 @@ namespace FluidSim {
 			float3 sim_origin;
 		};
 
+		class Object 
+		{
+		public:
+			float3 pos;
+		};
+
+		class StaticObject
+		{
+		public:
+			float3 pos;
+		};
+
 		class SimulateSystem {
 		public:
 			__host__
@@ -64,6 +79,18 @@ namespace FluidSim {
 				~SimulateSystem();
 			__host__
 				void add_cube_fluid(const float3 &pos_min, const float3 &pos_max, const float gap);
+			__host__
+				void add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max); // add cude fluid
+			__host__
+				void add_fluid(const float3 &sphere_pos, const float &radius);  // add sphere fluid
+			__host__
+				void add_fluid(const float3 &scale_const); // add object fluid
+			__host__
+				void add_static_object(const float3 &cube_pos_min, const float3 &cube_pos_max);  // add static object
+			__host__
+				void add_static_object(const float3 &sphere_pos, const float &radius);  // add static object
+			__host__
+				void add_static_object(const float3 &scale_const);  // add static object
 			__host__
 				void start();
 			__host__
@@ -130,6 +157,8 @@ namespace FluidSim {
 			float3 *normals_;
 			float3 *vertexs_;
 
+			int *occupied_;
+			int *dev_occupied_;
 			float3 *dev_normals_;
 			float3 *dev_vertexs_;
 			uint * dev_hash_;
@@ -138,7 +167,7 @@ namespace FluidSim {
 			uint* dev_end_;
 		};
 
-		__device__ __forceinline__
+		__device__ __host__ __forceinline__
 			int3 calc_cell_pos(float3 p, float cell_size);
 
 		__device__ __forceinline__

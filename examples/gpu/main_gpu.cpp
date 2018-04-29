@@ -9,8 +9,18 @@
 #include "gpu/fluidsim_system.cuh"
 #include "gpu/fluidsim_marchingcube.cuh"
 
+#include "fluidsim_marchingcube.h"
+
+#include "json.hpp"
+#include <string>
+#include <vector>
+
+
+
 #pragma comment(lib, "glew32.lib") 
 #define GPU_MC
+
+using json = nlohmann::json;
 
 //Somulation system global variable
 FluidSim::gpu::SimulateSystem *simsystem;
@@ -35,6 +45,7 @@ float yTrans = 0;
 float zTrans = -35.0;
 int render_mode = 0;
 int mc_render_mode = 0;
+int collision_render_mode = 0;
 int ox;
 int oy;
 int buttonState;
@@ -124,9 +135,8 @@ void draw_box(float ox, float oy, float oz, float width, float height, float len
 
 void init_sph_system(std::string config_path)
 {
-	sim_ratio = real_world_side / world_size;
 
-	if (config_path != "")
+	if(config_path!="")
 	{
 		cv::FileStorage fs;
 		fs.open(config_path, cv::FileStorage::READ);
@@ -178,9 +188,28 @@ void init_sph_system(std::string config_path)
 		fs["cube_max.x"] >> cube_max.x;
 		fs["cube_max.y"] >> cube_max.y;
 		fs["cube_max.z"] >> cube_max.z;
+
 		float gap;
 		fs["gap"] >> gap;
 		//simsystem->add_cube_fluid(cube_min, cube_max, gap);
+
+		//simsystem->add_cube_fluid(cube_min, cube_max);
+
+		//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
+
+		simsystem->add_cube_fluid(make_float3(0.9f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
+
+		//simsystem->add_cube_fluid(make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f, 0.2f, 1.0f), gap);
+
+		//simsystem->add_fluid(make_float3(0.2f, 0.5f, 0.1f), make_float3(0.7f, 0.9f, 0.9f));  // a cube drop from the air
+
+		//simsystem->add_fluid(make_float3(0.5f, 0.5f, 0.5f), 0.4f);  // a sphere drop from the air
+
+		//simsystem->add_fluid(make_float3(4.5f, 4.5f, 4.5f));  // a bunny drop
+		
+		//simsystem->add_fluid(make_float3(1.5f, 1.5f, 1.5f));  // a bunny drop
+
+		simsystem->add_static_object({ 0.3f,0.0f,0.3f }, { 0.7f,0.7f,0.7f });
 	}
 	else
 	{
@@ -232,7 +261,7 @@ void render_simulation()
 
 	if (render_mode != 3)
 	{
-		glUseProgram(particle_shader);
+		glUseProgram(0);
 		glPointSize(1.0f);
 		glColor3f(0.2f, 0.2f, 1.0f);
 
@@ -243,7 +272,7 @@ void render_simulation()
 
 		for (unsigned int i = 0; i < simsystem->get_num_particles(); i++)
 		{
-			if (render_mode == 0)
+			if (render_mode == 0)  // particle color represent surface normal
 			{
 				if (particles[i].surf_norm > simsystem->get_sys_pararm()->surf_norm)
 				{
@@ -254,12 +283,12 @@ void render_simulation()
 					glColor3f(0.2f, 2.0f, 1.0f);
 				}
 			}
-			else if (render_mode == 1)
+			else if (render_mode == 1)  // particle color represent particle density
 			{
 				float color = 1.0f - particles[i].dens / 5000;
 				glColor3f(color*0.0, color*0.3, color*0.6);
 			}
-			else
+			else  // particle color represent particle velocity
 			{
 				float3 vel = particles[i].force/100.f;
 				glColor3f((vel.x+1)/2.f, (vel.y + 1) / 2.f, (vel.z + 1) / 2.f);
