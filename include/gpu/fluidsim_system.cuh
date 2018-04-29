@@ -12,6 +12,9 @@
 
 #include "gpu/fluidsim_marchingcube.cuh"
 
+#include <fstream>
+#include <string>
+
 namespace FluidSim {
 
 	namespace gpu {
@@ -55,6 +58,18 @@ namespace FluidSim {
 			float3 sim_origin;
 		};
 
+		class Object 
+		{
+		public:
+			float3 pos;
+		};
+
+		class StaticObject
+		{
+		public:
+			float3 pos;
+		};
+
 		class SimulateSystem {
 		public:
 			__host__
@@ -63,6 +78,14 @@ namespace FluidSim {
 				~SimulateSystem();
 			__host__
 				void add_cube_fluid(const float3 &pos_min, const float3 &pos_max);
+			__host__
+				void add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max); // add cude fluid
+			__host__
+				void add_fluid(const float3 &sphere_pos, const float &radius);  // add sphere fluid
+			__host__
+				void add_fluid(const float3 &scale_const); // add object fluid
+			__host__
+				void add_static_object(StaticObject &obj);  // add static object
 			__host__
 				void start();
 			__host__

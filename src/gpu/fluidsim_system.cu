@@ -9,6 +9,10 @@
 
 #include "gpu/fluidsim_system.cuh"
 
+#include <iostream>
+#include <fstream>
+#include <string>
+
 namespace FluidSim {
 
 	namespace gpu {
@@ -227,7 +231,7 @@ namespace FluidSim {
 			sys_param_->gravity.z = 0.0f;
 			sys_param_->bound_damping = -0.5f;
 			sys_param_->rest_dens = 1000.f;
-			sys_param_->gas_const = 1.0f;
+			sys_param_->gas_const = 5.0f;  // original 1.0f
 			sys_param_->visc = 16.5f;
 			sys_param_->timestep = 0.002f;
 			sys_param_->surf_norm = 3.0f;
@@ -304,6 +308,113 @@ namespace FluidSim {
 						add_particle(pos, vel);
 					}
 				}
+			}
+		}
+
+		__host__
+			void SimulateSystem::add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max)
+		{
+			float3 pos;
+			float3 vel;
+
+			vel.x = 0.f;
+			vel.y = 0.f;
+			vel.z = 0.f;
+
+			for (pos.x = sys_param_->world_size.x*cube_pos_min.x; pos.x < sys_param_->world_size.x*cube_pos_max.x; pos.x += (sys_param_->kernel*0.5f))
+			{
+				for (pos.y = sys_param_->world_size.y*cube_pos_min.y; pos.y < sys_param_->world_size.y*cube_pos_max.y; pos.y += (sys_param_->kernel*0.5f))
+				{
+					for (pos.z = sys_param_->world_size.z*cube_pos_min.z; pos.z < sys_param_->world_size.z*cube_pos_max.z; pos.z += (sys_param_->kernel*0.5f))
+					{
+						add_particle(pos, vel);
+					}
+				}
+			}
+		}
+
+		__host__
+			void SimulateSystem::add_fluid(const float3 &sphere_pos, const float &radius)
+		{
+			float3 pos;
+			float3 vel;
+
+			vel.x = 0.f;
+			vel.y = 0.f;
+			vel.z = 0.f;
+
+			// calculate the bounding box of sphere
+			float3 pos_origin = sphere_pos * sys_param_->world_size;
+			float3 pos_min = pos_origin - make_float3(radius, radius, radius);
+			float3 pos_max = pos_origin + make_float3(radius, radius, radius);
+
+			if (pos_min.x < 0.f || pos_min.y < 0.f || pos_min.z < 0.f)
+			{
+				std::cout << "Out of bottom limit" << std::endl;
+			}
+			if (pos_max.x > sys_param_->world_size.x || pos_max.y > sys_param_->world_size.y || pos_max.z > sys_param_->world_size.z)
+			{
+				std::cout << "Out of top limit" << std::endl;
+			}
+
+			for (pos.x = pos_min.x; pos.x <= pos_max.x; pos.x += (sys_param_->kernel*0.5f))
+			{
+				for (pos.y = pos_min.y; pos.y <= pos_max.y; pos.y += (sys_param_->kernel*0.5f))
+				{
+					for (pos.z = pos_min.z; pos.z <= pos_max.z; pos.z += (sys_param_->kernel*0.5f))
+					{
+						if (length(pos - pos_origin) <= radius)
+						{
+							add_particle(pos, vel);
+						}
+					}
+				}
+			}
+
+		}
+
+		__host__
+			void SimulateSystem::add_fluid(const float3 &scale_const)
+		{
+			float3 pos;
+			float3 vel;
+
+			vel.x = 0.f;
+			vel.y = 0.f;
+			vel.z = 0.f;
+
+			// read object point cloud coordinate
+			std::string line;
+			std::ifstream myfile("../scene/bunny.txt");
+			if (myfile.is_open())
+			{
+				getline(myfile, line);
+
+				std::string delimiter = " ";
+				float coord;
+
+				while (getline(myfile, line))
+				{
+					std::vector<float> tmp;
+					size_t Pos = 0;
+					while ((Pos = line.find(delimiter)) != std::string::npos)
+					{
+						coord = stof(line.substr(0, Pos));
+						tmp.push_back(coord);
+						line.erase(0, Pos + delimiter.length());
+					}
+					coord = stof(line.substr(0, line.length()));
+					tmp.push_back(coord);
+					pos.x = tmp[0] * scale_const.x + 1.5f;
+					pos.y = tmp[1] * scale_const.y + 0.2f;
+					pos.z = tmp[2] * scale_const.z + 0.4f;
+					add_particle(pos, vel);
+				}
+				myfile.close();
+			}
+			else
+			{
+				std::cout << "Unable to open file!" << std::endl;
 			}
 		}
 

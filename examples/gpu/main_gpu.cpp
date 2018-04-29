@@ -9,9 +9,14 @@
 #include "gpu/fluidsim_marchingcube.cuh"
 #include "fluidsim_marchingcube.h"
 
+#include "json.hpp"
+#include <string>
+#include <vector>
 
 #pragma comment(lib, "glew32.lib") 
 #define GPU_MC
+
+using json = nlohmann::json;
 
 //Somulation system global variable
 FluidSim::gpu::SimulateSystem *simsystem;
@@ -32,6 +37,7 @@ float yTrans = 0;
 float zTrans = -35.0;
 int render_mode = 0;
 int mc_render_mode = 0;
+int collision_render_mode = 0;
 int ox;
 int oy;
 int buttonState;
@@ -62,6 +68,11 @@ float *model_scalar;
 GLuint v;
 GLuint f;
 GLuint p;
+
+//json object name
+const std::string SPHERE = "sphere";
+
+//std::vector<std::vector<float>> object_coord;
 
 void set_shaders()
 {
@@ -192,10 +203,50 @@ void init_sph_system()
 	simsystem = new FluidSim::gpu::SimulateSystem(world_size, sim_ratio, real_world_origin);
 	//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
 
-	simsystem->add_cube_fluid(make_float3(0.7f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f));
+	//simsystem->add_cube_fluid(make_float3(0.7f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f));
+
+	simsystem->add_cube_fluid(make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f, 0.2f, 1.0f));
+
+	//simsystem->add_fluid(make_float3(0.2f, 0.5f, 0.1f), make_float3(0.7f, 0.9f, 0.9f));  // a cube drop from the air
+
+	//simsystem->add_fluid(make_float3(0.5f, 0.5f, 0.5f), 0.4f);  // a sphere drop from the air
+
+	simsystem->add_fluid(make_float3(4.5f, 4.5f, 4.5f));  // a bunny drop
 
 	timer = new FluidSim::Timer();
 	window_title = (char *)malloc(sizeof(char) * 50);
+
+	// read object point cloud coordinate
+	/*std::string line;
+	std::ifstream myfile("../scene/bunny.txt");
+	if (myfile.is_open())
+	{
+		getline(myfile, line);
+
+		std::string delimiter = " ";
+		float coord;
+
+		while (getline(myfile, line))
+		{
+			std::vector<float> tmp;
+			size_t pos = 0;
+			while ((pos = line.find(delimiter)) != std::string::npos)
+			{
+				coord = stof(line.substr(0, pos));
+				tmp.push_back(coord);
+				line.erase(0, pos + delimiter.length());
+			}
+			coord = stof(line.substr(0, line.length()));
+			tmp.push_back(coord);
+			object_coord.push_back(tmp);
+		}
+		myfile.close();
+	}
+	else
+	{
+		std::cout << "Unable to open file!" << std::endl;
+	}*/
+
 }
 
 void init_marching_cube()
@@ -263,7 +314,7 @@ void render_simulation()
 
 		for (unsigned int i = 0; i < simsystem->get_num_particles(); i++)
 		{
-			if (render_mode == 0)
+			if (render_mode == 0)  // particle color represent surface normal
 			{
 				if (particles[i].surf_norm > simsystem->get_sys_pararm()->surf_norm)
 				{
@@ -274,12 +325,12 @@ void render_simulation()
 					glColor3f(0.2f, 1.0f, 0.2f);
 				}
 			}
-			else if (render_mode == 1)
+			else if (render_mode == 1)  // particle color represent particle density
 			{
 				float color = 1.0f - particles[i].dens / 5000;
 				glColor3f(color*0.0, color*0.3, color*0.6);
 			}
-			else
+			else  // particle color represent particle velocity
 			{
 				float3 vel = particles[i].vel;
 				glColor3f(vel.x*10.f, vel.y*10.f, vel.z*10.f);
@@ -360,6 +411,23 @@ void render_simulation()
 			}
 		}
 	}
+
+	// visualize object point cloud
+	/*glPointSize(2.0f);
+	glColor3f(0.2f, 0.2f, 1.0f);
+
+	float3 pos;
+
+	for (int i = 0; i < object_coord.size(); i++)
+	{
+		glBegin(GL_POINTS);
+		pos.x = 4.5f * object_coord[i][0] * sim_ratio.x + real_world_origin.x + 7.5f;
+		pos.y = 4.5f * object_coord[i][1] * sim_ratio.y + real_world_origin.y - 1.5f;
+		pos.z = 4.5f * object_coord[i][2] * sim_ratio.z + real_world_origin.z + 4.0f;
+		glVertex3f(pos.x, pos.y, pos.z);
+		glEnd();
+	}*/
+	
 }
 
 void display_func()
@@ -515,6 +583,7 @@ void motion_func(int x, int y)
 
 int main(int argc, char **argv)
 {
+
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
