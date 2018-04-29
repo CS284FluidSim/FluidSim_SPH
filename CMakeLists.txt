@@ -18,6 +18,7 @@ SET(SOURCE
     ${CMAKE_SOURCE_DIR}/src/gpu/fluidsim_marchingcube.cu
     ${CMAKE_SOURCE_DIR}/src/fluidsim_marchingcube.cpp
     ${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp
+	${CMAKE_SOURCE_DIR}/src/fluidsim_scene_object.cpp
     ${CMAKE_SOURCE_DIR}/src/fluidsim_gl_utils.cpp
     ${CMAKE_SOURCE_DIR}/common/stb_image.c
 )
@@ -27,6 +28,7 @@ SET(HEADERS
 	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_marchingcube.cuh
 	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_marchingcube_param.cuh
 	${CMAKE_SOURCE_DIR}/include/fluidsim_timer.h
+	${CMAKE_SOURCE_DIR}/include/fluidsim_scene_object.h
 	${CMAKE_SOURCE_DIR}/include/fluidsim_gl_utils.h
 	${CMAKE_SOURCE_DIR}/common/stb_image.h
 )

@@ -8,10 +8,8 @@
 #include "fluidsim_gl_utils.h"
 #include "gpu/fluidsim_system.cuh"
 #include "gpu/fluidsim_marchingcube.cuh"
-
-#include "fluidsim_marchingcube.h"
-
 #include "json.hpp"
+
 #include <string>
 #include <vector>
 
@@ -79,9 +77,7 @@ using namespace FluidSim;
 void draw_skybox()
 {
 	glDepthMask(GL_FALSE);
-	glUseProgram(skybox_shader);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_tex_id);
+	glUseProgram(phong_shader);
 	glBindVertexArray(skyboxVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glDepthMask(GL_TRUE);

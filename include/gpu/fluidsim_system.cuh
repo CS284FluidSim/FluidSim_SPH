@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include "gpu/fluidsim_marchingcube.cuh"
+#include "fluidsim_scene_object.h"
 
 #include <fstream>
 #include <string>
@@ -94,7 +95,7 @@ namespace FluidSim {
 			__host__
 				void start();
 			__host__
-				void animation();
+				virtual void animation();
 			__host__
 				void render(MarchingCube::RenderMode rm);
 			__host__
@@ -165,6 +166,8 @@ namespace FluidSim {
 			uint * dev_index_;
 			uint* dev_start_;
 			uint* dev_end_;
+
+			std::vector<SceneObject *> scene_objects;
 		};
 
 		__device__ __host__ __forceinline__

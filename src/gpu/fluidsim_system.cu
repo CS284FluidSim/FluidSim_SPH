@@ -281,6 +281,8 @@ namespace FluidSim {
 		__host__
 			SimulateSystem::~SimulateSystem() {
 			
+			for (int i = 0; i < scene_objects.size(); ++i)
+				delete scene_objects[i];
 			free(particles_);
 			free(occupied_);
 			delete marchingCube_;
@@ -462,7 +464,8 @@ namespace FluidSim {
 					}
 				}
 			}
-
+			SceneObject *obj = new Cube({ 0.f,0.f,0.f }, { 1.f,1.f,1.f });
+			scene_objects.push_back(obj);
 			cudaMemcpy(dev_occupied_, occupied_, sizeof(int)*sys_param_->total_cells, cudaMemcpyHostToDevice);
 		}
 
@@ -505,6 +508,10 @@ namespace FluidSim {
 		__host__
 			void SimulateSystem::render(MarchingCube::RenderMode rm)
 		{
+			//render static scene objects
+			for (auto obj : scene_objects)
+				obj->render();
+			//render fluid mesh
 			marchingCube_->render(rm);
 		}
 
