@@ -235,12 +235,12 @@ namespace FluidSim {
 			sys_param_->surf_coef = surf_coef;
 
 			sys_param_->poly6 = 315.0f / (64.0f * PI * pow(sys_param_->h, 9));
-			sys_param_->grad_spiky = -45.0f / (PI * pow(sys_param_->h, 6));
-			sys_param_->lplc_visco = 45.0f / (PI * pow(sys_param_->h, 6));
-
 			sys_param_->grad_poly6 = -945 / (32 * PI * pow(sys_param_->h, 9));
 			sys_param_->lplc_poly6 = 945 / (8 * PI * pow(sys_param_->h, 9));
 
+			sys_param_->grad_spiky = -45.0f / (PI * pow(sys_param_->h, 6));
+			sys_param_->lplc_visco = 45.0f / (PI * pow(sys_param_->h, 6));
+		
 			sys_param_->h2 = sys_param_->h*sys_param_->h;
 			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->h2*(0 - 3.f / 4.f * sys_param_->h2);
 
@@ -305,7 +305,6 @@ namespace FluidSim {
 					}
 				}
 			}
-			
 		}
 
 		__host__
@@ -469,7 +468,7 @@ namespace FluidSim {
 					if (r2 >= h2)
 						continue;
 
-					total_cell_density = total_cell_density + mass * poly6 * pow(h2 - r2, 3);
+					total_cell_density += mass * poly6 * pow(h2 - r2, 3);
 				}
 			}
 
@@ -501,8 +500,7 @@ namespace FluidSim {
 			float3 rel_pos;
 			float r2;
 			float r;
-
-			float V;
+			float vol;
 			float h_r;
 
 			float3 f_pressure;
@@ -525,6 +523,7 @@ namespace FluidSim {
 
 					if (r2 < h2 && r2 > EPS_F)
 					{
+						vol = mass / np->dens;
 						// norm of relative pos
 						r = sqrt(r2);
 
@@ -532,16 +531,16 @@ namespace FluidSim {
 						h_r = h - r;
 
 						// calculate pressure force
-						f_pressure = rel_pos/r * mass * (p->pres + np->pres) / 2.f / np->dens * dev_sys_param->grad_spiky * h_r * h_r;
-						total_cell_force = total_cell_force - f_pressure;
+						f_pressure = rel_pos/r * vol * (p->pres + np->pres) / 2.f  * dev_sys_param->grad_spiky * h_r * h_r;
+						total_cell_force -= f_pressure;
 
 						// calculate viscosity force
-						f_visco = dev_sys_param->visc * mass * (np->vel - p->vel) / np->dens * dev_sys_param->lplc_visco * h_r;
-						total_cell_force = total_cell_force + f_visco;
+						f_visco = dev_sys_param->visc * vol * (np->vel - p->vel) * dev_sys_param->lplc_visco * h_r;
+						total_cell_force += f_visco;
 
 						// calculate color field according to paper Realtime particle-based fluid simulation [Stefan Auer et. al]
-						grad_color +=  rel_pos * -1.f * dev_sys_param->grad_poly6 *  mass / np->dens * pow(h2 - r2, 2);
-						lplc_color += dev_sys_param->lplc_poly6 *  mass / np->dens * (h2 - r2) * (r2 - 3.f / 4.f * (h2 - r2));
+						grad_color -=  rel_pos * dev_sys_param->grad_poly6 * vol * pow(h2 - r2, 2);
+						lplc_color += dev_sys_param->lplc_poly6 * vol * (h2 - r2) * (r2 - 3.f / 4.f * (h2 - r2));
 					}
 				}
 			}
