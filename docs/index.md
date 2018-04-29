@@ -76,6 +76,6 @@ In this project, we are trying to accelerate fluid simulation algorithm based on
 
 <center><a href="https://youtu.be/WxrsHBht8nI">Milestone Video</a></center>
 
-## Part II: Milestone Slides
+## Part III: Milestone Slides
 
 <center><a href="https://drive.google.com/open?id=1BuE1BcjL6xKZ_YmSb4Dj2-20mUw6oTGRxn5bRB6QUDg">Milestone Slides</a></center>

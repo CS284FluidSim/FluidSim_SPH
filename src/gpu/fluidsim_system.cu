@@ -99,10 +99,9 @@ namespace FluidSim {
 				}
 			}
 
-			total_density = total_density + dev_sys_param->self_dens;
 			dev_particles[index].dens = total_density;
 
-			if (total_density < INF)
+			if (total_density < EPS_F)
 			{
 				dev_particles[index].dens = dev_sys_param->rest_dens;
 			}
@@ -122,7 +121,7 @@ namespace FluidSim {
 
 			int3 cell_pos = calc_cell_pos(dev_particles[index].pos, dev_sys_param->cell_size);
 
-			float3 total_force = make_float3(0.0f, 0.0f, 0.0f);
+			float3 f_total = make_float3(0.0f, 0.0f, 0.0f);
 			float3 grad_color = make_float3(0.0f);
 			float lplc_color = 0.0f;
 
@@ -133,11 +132,11 @@ namespace FluidSim {
 					for (int x = -1; x <= 1; x++)
 					{
 						int3 neighbor_pos = cell_pos + make_int3(x, y, z);
-						total_force = total_force + calc_cell_force(index, neighbor_pos, dev_particles, dev_hash, dev_index, dev_start, dev_end, grad_color, lplc_color, dev_sys_param);
+						f_total = f_total + calc_cell_force(index, neighbor_pos, dev_particles, dev_hash, dev_index, dev_start, dev_end, grad_color, lplc_color, dev_sys_param);
 					}
 				}
 			}
-			dev_particles[index].force = total_force;
+			dev_particles[index].force = f_total;
 
 			lplc_color += dev_sys_param->self_lplc_color / dev_particles[index].dens;
 			dev_particles[index].surf_norm = sqrt(grad_color.x*grad_color.x + grad_color.y*grad_color.y + grad_color.z*grad_color.z);
@@ -167,10 +166,12 @@ namespace FluidSim {
 
 			Particle *p = &(dev_particles[index]);
 
-			p->vel = p->vel + p->force*dev_sys_param->timestep / p->dens + dev_sys_param->gravity*dev_sys_param->timestep;
+			float3 acc = p->force / p->dens + dev_sys_param->gravity;
+			
+			p->vel = p->vel + acc*dev_sys_param->timestep;
 			p->pos = p->pos + p->vel*dev_sys_param->timestep;
 
-			if (p->pos.x >= dev_sys_param->world_size.x - BOUNDARY)
+			if (p->pos.x > dev_sys_param->world_size.x - BOUNDARY)
 			{
 				p->vel.x = p->vel.x*dev_sys_param->bound_damping;
 				p->pos.x = dev_sys_param->world_size.x - BOUNDARY;
@@ -179,10 +180,10 @@ namespace FluidSim {
 			if (p->pos.x < 0.0f)
 			{
 				p->vel.x = p->vel.x*dev_sys_param->bound_damping;
-				p->pos.x = 0.0f;
+				p->pos.x = BOUNDARY;
 			}
 
-			if (p->pos.y >= dev_sys_param->world_size.y - BOUNDARY)
+			if (p->pos.y > dev_sys_param->world_size.y - BOUNDARY)
 			{
 				p->vel.y = p->vel.y*dev_sys_param->bound_damping;
 				p->pos.y = dev_sys_param->world_size.y - BOUNDARY;
@@ -191,10 +192,10 @@ namespace FluidSim {
 			if (p->pos.y < 0.0f)
 			{
 				p->vel.y = p->vel.y*dev_sys_param->bound_damping;
-				p->pos.y = 0.0f;
+				p->pos.y = BOUNDARY;
 			}
 
-			if (p->pos.z >= dev_sys_param->world_size.z - BOUNDARY)
+			if (p->pos.z > dev_sys_param->world_size.z - BOUNDARY)
 			{
 				p->vel.z = p->vel.z*dev_sys_param->bound_damping;
 				p->pos.z = dev_sys_param->world_size.z - BOUNDARY;
@@ -203,50 +204,50 @@ namespace FluidSim {
 			if (p->pos.z < 0.0f)
 			{
 				p->vel.z = p->vel.z*dev_sys_param->bound_damping;
-				p->pos.z = 0.0f;
+				p->pos.z = BOUNDARY;
 			}
 
 		}
 
 		__host__
-			SimulateSystem::SimulateSystem(float3 world_size, float3 sim_ratio, float3 world_origin)
+			SimulateSystem::SimulateSystem(float3 world_size, float3 sim_ratio, float3 world_origin,
+				int max_particles, float h, float mass, float3 gravity, float bound_damping, 
+				float rest_dens, float gas_const, float visc, float timestep, float surf_norm, float surf_coef)
 		{
 			sys_running_ = false;
 			sys_param_ = new SysParam();
 			sys_param_->num_particles = 0;
 
-			sys_param_->max_particles = 500000;
-			sys_param_->kernel = 0.04f;
-			sys_param_->mass = 0.02f;
+			sys_param_->max_particles = max_particles;
+			sys_param_->h = h;
+			sys_param_->mass = mass;
 
 			sys_param_->world_size = world_size;
-			sys_param_->cell_size = sys_param_->kernel;
+			sys_param_->cell_size = sys_param_->h;
 			sys_param_->grid_size.x = (int)ceil(sys_param_->world_size.x / sys_param_->cell_size);
 			sys_param_->grid_size.y = (int)ceil(sys_param_->world_size.y / sys_param_->cell_size);
 			sys_param_->grid_size.z = (int)ceil(sys_param_->world_size.z / sys_param_->cell_size);
 			sys_param_->total_cells = sys_param_->grid_size.x*sys_param_->grid_size.y*sys_param_->grid_size.z;
 
-			sys_param_->gravity.x = 0.f;
-			sys_param_->gravity.y = -9.8f;
-			sys_param_->gravity.z = 0.0f;
-			sys_param_->bound_damping = -0.5f;
-			sys_param_->rest_dens = 1000.f;
-			sys_param_->gas_const = 5.0f;  // original 1.0f
-			sys_param_->visc = 16.5f;
-			sys_param_->timestep = 0.002f;
-			sys_param_->surf_norm = 3.0f;
-			sys_param_->surf_coef = 0.2f;
+			sys_param_->gravity = gravity;
+			sys_param_->bound_damping = bound_damping;
+			sys_param_->rest_dens = rest_dens;
+			sys_param_->gas_const = gas_const;
+			sys_param_->visc = visc;
+			sys_param_->timestep = timestep;
+			sys_param_->surf_norm = surf_norm;
+			sys_param_->surf_coef = surf_coef;
 
-			sys_param_->poly6_value = 315.0f / (64.0f * PI * pow(sys_param_->kernel, 9));
-			sys_param_->spiky_value = -45.0f / (PI * pow(sys_param_->kernel, 6));
-			sys_param_->visco_value = 45.0f / (PI * pow(sys_param_->kernel, 6));
+			sys_param_->poly6 = 315.0f / (64.0f * PI * pow(sys_param_->h, 9));
+			sys_param_->grad_poly6 = -945 / (32 * PI * pow(sys_param_->h, 9));
+			sys_param_->lplc_poly6 = 945 / (8 * PI * pow(sys_param_->h, 9));
 
-			sys_param_->grad_poly6 = -945 / (32 * PI * pow(sys_param_->kernel, 9));
-			sys_param_->lplc_poly6 = -945 / (8 * PI * pow(sys_param_->kernel, 9));
+			sys_param_->grad_spiky = -45.0f / (PI * pow(sys_param_->h, 6));
+			sys_param_->lplc_visco = 45.0f / (PI * pow(sys_param_->h, 6));
+		
+			sys_param_->h2 = sys_param_->h*sys_param_->h;
+			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->h2*(0 - 3.f / 4.f * sys_param_->h2);
 
-			sys_param_->kernel2 = sys_param_->kernel*sys_param_->kernel;
-			sys_param_->self_dens = sys_param_->mass*sys_param_->poly6_value*pow(sys_param_->kernel, 6);
-			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->kernel2*(0 - 3.f / 4.f * sys_param_->kernel2);
 
 			cudaMalloc(&dev_sys_param_, sizeof(SysParam));
 
@@ -299,11 +300,11 @@ namespace FluidSim {
 			vel.y = 0.f;
 			vel.z = 0.f;
 
-			for (pos.x = sys_param_->world_size.x*pos_min.x; pos.x < sys_param_->world_size.x*pos_max.x; pos.x += (sys_param_->kernel*0.5f))
+			for (pos.x = sys_param_->world_size.x*pos_min.x; pos.x < sys_param_->world_size.x*pos_max.x; pos.x += (sys_param_->h*0.5f))
 			{
-				for (pos.y = sys_param_->world_size.y*pos_min.y; pos.y < sys_param_->world_size.y*pos_max.y; pos.y += (sys_param_->kernel*0.5f))
+				for (pos.y = sys_param_->world_size.y*pos_min.y; pos.y < sys_param_->world_size.y*pos_max.y; pos.y += (sys_param_->h*0.5f))
 				{
-					for (pos.z = sys_param_->world_size.z*pos_min.z; pos.z < sys_param_->world_size.z*pos_max.z; pos.z += (sys_param_->kernel*0.5f))
+					for (pos.z = sys_param_->world_size.z*pos_min.z; pos.z < sys_param_->world_size.z*pos_max.z; pos.z += (sys_param_->h*0.5f))
 					{
 						add_particle(pos, vel);
 					}
@@ -321,11 +322,11 @@ namespace FluidSim {
 			vel.y = 0.f;
 			vel.z = 0.f;
 
-			for (pos.x = sys_param_->world_size.x*cube_pos_min.x; pos.x < sys_param_->world_size.x*cube_pos_max.x; pos.x += (sys_param_->kernel*0.5f))
+			for (pos.x = sys_param_->world_size.x*cube_pos_min.x; pos.x < sys_param_->world_size.x*cube_pos_max.x; pos.x += (sys_param_->h*0.5f))
 			{
-				for (pos.y = sys_param_->world_size.y*cube_pos_min.y; pos.y < sys_param_->world_size.y*cube_pos_max.y; pos.y += (sys_param_->kernel*0.5f))
+				for (pos.y = sys_param_->world_size.y*cube_pos_min.y; pos.y < sys_param_->world_size.y*cube_pos_max.y; pos.y += (sys_param_->h*0.5f))
 				{
-					for (pos.z = sys_param_->world_size.z*cube_pos_min.z; pos.z < sys_param_->world_size.z*cube_pos_max.z; pos.z += (sys_param_->kernel*0.5f))
+					for (pos.z = sys_param_->world_size.z*cube_pos_min.z; pos.z < sys_param_->world_size.z*cube_pos_max.z; pos.z += (sys_param_->h*0.5f))
 					{
 						add_particle(pos, vel);
 					}
@@ -357,11 +358,11 @@ namespace FluidSim {
 				std::cout << "Out of top limit" << std::endl;
 			}
 
-			for (pos.x = pos_min.x; pos.x <= pos_max.x; pos.x += (sys_param_->kernel*0.5f))
+			for (pos.x = pos_min.x; pos.x <= pos_max.x; pos.x += (sys_param_->h*0.5f))
 			{
-				for (pos.y = pos_min.y; pos.y <= pos_max.y; pos.y += (sys_param_->kernel*0.5f))
+				for (pos.y = pos_min.y; pos.y <= pos_max.y; pos.y += (sys_param_->h*0.5f))
 				{
-					for (pos.z = pos_min.z; pos.z <= pos_max.z; pos.z += (sys_param_->kernel*0.5f))
+					for (pos.z = pos_min.z; pos.z <= pos_max.z; pos.z += (sys_param_->h*0.5f))
 					{
 						if (length(pos - pos_origin) <= radius)
 						{
@@ -403,12 +404,17 @@ namespace FluidSim {
 						tmp.push_back(coord);
 						line.erase(0, Pos + delimiter.length());
 					}
-					coord = stof(line.substr(0, line.length()));
-					tmp.push_back(coord);
+					if (line.length() != 0)
+					{
+						coord = stof(line.substr(0, line.length()));
+						tmp.push_back(coord);
+					}
 					pos.x = tmp[0] * scale_const.x + 1.5f;
-					pos.y = tmp[1] * scale_const.y + 0.2f;
+					pos.y = tmp[1] * scale_const.y;
 					pos.z = tmp[2] * scale_const.z + 0.4f;
-					add_particle(pos, vel);
+					if (pos.x > 0.f && pos.x < sys_param_->world_size.x && pos.y > 0.f && pos.y < sys_param_->world_size.y && pos.z > 0.f && pos.z < sys_param_->world_size.z)
+						add_particle(pos, vel);
+					
 				}
 				myfile.close();
 			}
@@ -554,8 +560,8 @@ namespace FluidSim {
 			uint start_index = dev_start[grid_hash];
 
 			float mass = dev_sys_param->mass;
-			float kernel2 = dev_sys_param->kernel2;
-			float poly6_value = dev_sys_param->poly6_value;
+			float h2 = dev_sys_param->h2;
+			float poly6 = dev_sys_param->poly6;
 
 			float3 rel_pos;
 			float r2;
@@ -576,12 +582,10 @@ namespace FluidSim {
 					rel_pos = np->pos - p->pos;
 					r2 = rel_pos.x*rel_pos.x + rel_pos.y*rel_pos.y + rel_pos.z*rel_pos.z;
 
-					if (r2 < INF || r2 >= kernel2)
-					{
+					if (r2 >= h2)
 						continue;
-					}
 
-					total_cell_density = total_cell_density + mass * poly6_value * pow(kernel2 - r2, 3);
+					total_cell_density += mass * poly6 * pow(h2 - r2, 3);
 				}
 			}
 
@@ -601,9 +605,9 @@ namespace FluidSim {
 
 			uint start_index = dev_start[grid_hash];
 
-			float kernel = dev_sys_param->kernel;
+			float h = dev_sys_param->h;
 			float mass = dev_sys_param->mass;
-			float kernel2 = dev_sys_param->kernel2;
+			float h2 = dev_sys_param->h2;
 
 			uint neighbor_index;
 
@@ -613,15 +617,13 @@ namespace FluidSim {
 			float3 rel_pos;
 			float r2;
 			float r;
+			float vol;
+			float h_r;
 
-			float V;
-			float kernel_r;
-
-			float pressure_kernel;
-			float temp_force;
+			float3 f_pressure;
+			float3 f_visco;
 
 			float3 rel_vel;
-			float viscosity_kernel;
 
 			if (start_index != 0xffffffff)
 			{
@@ -636,24 +638,26 @@ namespace FluidSim {
 					rel_pos = p->pos - np->pos;
 					r2 = rel_pos.x*rel_pos.x + rel_pos.y*rel_pos.y + rel_pos.z*rel_pos.z;
 
-					if (r2 < kernel2 && r2 > INF)
+					if (r2 < h2 && r2 > EPS_F)
 					{
+						vol = mass / np->dens;
+						// norm of relative pos
 						r = sqrt(r2);
-						V = mass / np->dens / 2;
-						kernel_r = kernel - r;
 
-						pressure_kernel = dev_sys_param->spiky_value * kernel_r * kernel_r;
-						temp_force = V * (p->pres + np->pres) * pressure_kernel;
-						total_cell_force = total_cell_force - rel_pos*temp_force / r;
+						// diff for kernel size and relative pos
+						h_r = h - r;
 
-						rel_vel = np->vel - p->vel;
-						viscosity_kernel = dev_sys_param->visco_value*(kernel - r);
-						temp_force = V * dev_sys_param->visc * viscosity_kernel;
-						total_cell_force = total_cell_force + rel_vel*temp_force;
+						// calculate pressure force
+						f_pressure = rel_pos/r * vol * (p->pres + np->pres) / 2.f  * dev_sys_param->grad_spiky * h_r * h_r;
+						total_cell_force -= f_pressure;
 
-						float temp = (-1) * dev_sys_param->grad_poly6 * V * pow(kernel2 - r2, 2);
-						grad_color += temp * rel_pos;
-						lplc_color += dev_sys_param->lplc_poly6 * V * (kernel2 - r2) * (r2 - 3.f / 4.f * (kernel2 - r2));
+						// calculate viscosity force
+						f_visco = dev_sys_param->visc * vol * (np->vel - p->vel) * dev_sys_param->lplc_visco * h_r;
+						total_cell_force += f_visco;
+
+						// calculate color field according to paper Realtime particle-based fluid simulation [Stefan Auer et. al]
+						grad_color -=  rel_pos * dev_sys_param->grad_poly6 * vol * pow(h2 - r2, 2);
+						lplc_color += dev_sys_param->lplc_poly6 * vol * (h2 - r2) * (r2 - 3.f / 4.f * (h2 - r2));
 					}
 				}
 			}
