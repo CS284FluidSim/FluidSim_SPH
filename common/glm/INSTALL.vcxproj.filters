@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="F:\VisualStudioProjects\glm-0.9.8.5\build\CMakeFiles\0716bc0c67096f947d3d7b08471b321c\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{28E0DB14-6CFD-3D97-8733-840E4F7245AB}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

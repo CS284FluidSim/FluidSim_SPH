@@ -91,11 +91,15 @@ namespace FluidSim {
 			__host__
 				void add_static_object(Sphere *sphere);
 			__host__
+				void add_static_object(Model *model);
+			__host__
 				void start();
 			__host__
 				virtual void animation();
 			__host__
-				void render(MarchingCube::RenderMode rm);
+				void render_surface(MarchingCube::RenderMode rm);
+			__host__
+				void render_static_object();
 			__host__
 				bool is_running() {
 				return sys_running_;

@@ -517,6 +517,11 @@ namespace FluidSim {
 			cudaMemcpy(dev_occupied_, occupied_, sizeof(int)*sys_param_->total_cells, cudaMemcpyHostToDevice);
 		}
 
+		void SimulateSystem::add_static_object(Model *model)
+		{
+			scene_objects.push_back(model);
+		}
+
 		__host__
 			void SimulateSystem::add_particle(const float3 &pos, const float3 &vel)
 		{
@@ -552,9 +557,8 @@ namespace FluidSim {
 
 			cudaMemcpy(particles_, dev_particles_, sizeof(Particle)*sys_param_->num_particles, cudaMemcpyDeviceToHost);
 		}
-		
-		__host__
-			void SimulateSystem::render(MarchingCube::RenderMode rm)
+
+		void SimulateSystem::render_static_object()
 		{
 			glPushMatrix();
 			glTranslatef(sys_param_->sim_origin.x, sys_param_->sim_origin.y, sys_param_->sim_origin.z);
@@ -563,7 +567,12 @@ namespace FluidSim {
 			for (auto obj : scene_objects)
 				obj->render();
 			glPopMatrix();
-			//render fluid mesh
+		}
+		
+		__host__
+			void SimulateSystem::render_surface(MarchingCube::RenderMode rm)
+		{
+			//render fluid surface
 			marchingCube_->render(rm);
 		}
 

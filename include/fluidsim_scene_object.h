@@ -6,6 +6,7 @@
 #include <cuda_runtime.h>
 
 #include <string>
+#include <vector>
 
 namespace FluidSim
 {
@@ -13,6 +14,9 @@ namespace FluidSim
 	{
 	protected:
 		GLuint vao_ = 0;
+		GLuint vbo_ = 0;
+		GLuint ebo_ = 0;
+		GLuint nvbo_ = 0;
 		GLuint shader_ = 0;
 		float3 position_ = {0.f,0.f,0.f};
 	public:
@@ -50,16 +54,25 @@ namespace FluidSim
 	{
 	private:
 		float radius_;
+		int lats_;
+		int longs_;
+		int num_vertices_;
 	public:
-		Sphere(float3 position, float radius);
+		Sphere(float3 position, float radius, int lats = 40, int longs = 40);
 		float get_radius() { return radius_; };
 		virtual void render();
 	};
 
 	class Model :public SceneObject
 	{
+	private:
+		float *vertices_;
+		float scale_;
+		int num_vertices_;
 	public:
-		Model(std::string path);
+		Model(std::string path, float3 position, float scale);
+		~Model();
+		virtual void render();
 	};
 }
 

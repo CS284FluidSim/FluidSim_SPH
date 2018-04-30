@@ -204,8 +204,10 @@ void init_sph_system(std::string config_path)
 		//simsystem->add_fluid(make_float3(1.5f, 1.5f, 1.5f));  // a bunny drop
 		Cube *cube = new Cube({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 
 							  { 0.2f*world_size.x,0.4f*world_size.y,0.5f*world_size.z });
-		//Sphere *sphere = new Sphere({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 0.4f);
-		simsystem->add_static_object(cube);
+		Sphere *sphere = new Sphere({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 0.2f);
+		//Model *model = new Model("../scene/bunny.txt", { 0.5f*world_size.x,0.5f*world_size.y,0.5f*world_size.z }, 0.1f);
+		//simsystem->add_static_object(cube);
+		simsystem->add_static_object(sphere);
 	}
 	else
 	{
@@ -254,6 +256,9 @@ void render_simulation()
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	glUseProgram(phong_shader);
+	simsystem->render_static_object();
 
 	if (render_mode != 3)
 	{
@@ -320,8 +325,9 @@ void render_simulation()
 				case 2:rm = FluidSim::gpu::MarchingCube::RenderMode::NORMAL; break;
 				case 3:rm = FluidSim::gpu::MarchingCube::RenderMode::POS; break;
 			}
+			glUseProgram(phong_shader);
 			glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-			simsystem->render(rm);
+			simsystem->render_surface(rm);
 			if (mc_render_mode == 0)
 			{
 				glDisable(GL_LIGHTING);
