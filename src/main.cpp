@@ -184,6 +184,7 @@ void init_sph_system()
 	real_world_side.z = 20.0f;
 
 	simsystem->add_cube_fluid(make_float3(0.f, 0.f, 0.f), make_float3(0.6f, 0.6f, 0.6f));
+	simsystem->add_boundary();
 #else
 	real_world_origin(0) = -10.0f;
 	real_world_origin(1) = -10.0f;
@@ -194,6 +195,7 @@ void init_sph_system()
 	real_world_side(2) = 20.0f;
 
 	simsystem->add_cube_fluid(Vector3f(0.f,0.f,0.f), Vector3f(0.6f, 0.6f, 0.6f));
+	simsystem->add_boundary();
 #endif
 	timer = new FluidSimPCI::Timer();
 	window_title = (char *)malloc(sizeof(char) * 50);

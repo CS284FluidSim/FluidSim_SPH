@@ -18,8 +18,10 @@ namespace FluidSimPCI {
 		Vector3f force;
 		Vector3f pres_force;
 		Vector3f damped_vel;
+		Vector3f normal;
 
 		float dens;
+		float mass;
 		float pres;
 		float surf_norm;
 		
@@ -31,6 +33,7 @@ namespace FluidSimPCI {
 		SimulateSystem();
 		~SimulateSystem();
 		void add_cube_fluid(const Vector3f &pos_min, const Vector3f &pos_max);
+		void add_boundary();
 		void start();
 		void animation();
 		bool is_running() {
@@ -45,12 +48,23 @@ namespace FluidSimPCI {
 		Particle *get_particles() {
 			return particles_;
 		}
+		int get_num_boundary_particles() {
+			return num_boundary_particles_;
+		}
+		Particle *get_boundary_particles() {
+			return boundary_particles_;
+		}
 
 	private:
 		void add_particle(const Vector3f &pos, const Vector3f &vel);
+		void add_boundary_particle(const Vector3f &pos, const Vector3f &normal);
 		void build_table();
+		void add_boundary_particles();
+		void build_boundary_table();
+		void massify_boundary();
 
 		void init_densities();
+		void init_normals();
 		void comp_force();
 		void init_pres_pres_force();
 		void pred_vel_pos();
@@ -67,6 +81,7 @@ namespace FluidSimPCI {
 		bool sys_running;
 		int max_particles_;
 		int num_particles_;
+		int num_boundary_particles_;
 
 		Vector3f world_size_;
 		Vector3i grid_size_;
@@ -91,12 +106,13 @@ namespace FluidSimPCI {
 		float min_iteration_;
 		float max_iteration_;
 
-		float surf_norm_;
 		float surf_coef_;
 
 		float poly6_value_;
 		float spiky_value_;
 		float visco_value_;
+		float surf_value_;
+		float surf_offset_;
 		float grad_poly6_;
 		float lplc_poly6_;
 
@@ -105,6 +121,8 @@ namespace FluidSimPCI {
 
 		Particle * particles_;
 		Particle ** cells_;
+		Particle * boundary_particles_;
+		Particle ** boundary_cells_;
 	};
 }
 
