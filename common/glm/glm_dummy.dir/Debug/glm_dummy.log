@@ -1,7 +1,0 @@
-﻿  Building Custom Rule F:/VisualStudioProjects/glm-0.9.8.5/glm/CMakeLists.txt
-  CMake does not need to re-run because F:/VisualStudioProjects/glm-0.9.8.5/build/glm/CMakeFiles/generate.stamp is up-to-date.
-  dummy.cpp
-  glm.cpp
-  正在生成代码...
-  glm_dummy.vcxproj -> F:\VisualStudioProjects\glm-0.9.8.5\build\glm\Debug\glm_dummy.exe
-  glm_dummy.vcxproj -> F:/VisualStudioProjects/glm-0.9.8.5/build/glm/Debug/glm_dummy.pdb (Full PDB)
