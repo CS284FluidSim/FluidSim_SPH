@@ -50,12 +50,12 @@ namespace FluidSim
 
 	void Cube::render()
 	{
-		glPushMatrix();
-		glTranslatef(position_.x, position_.y, position_.z);
-		glScalef(side_.x/2.f, side_.y/2.f, side_.z/2.f);
+		//glPushMatrix();
+		//glTranslatef(position_.x, position_.y, position_.z);
+		//glScalef(side_.x/2.f, side_.y/2.f, side_.z/2.f);
 		glBindVertexArray(vao_);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glPopMatrix();
+		//glPopMatrix();
 	}
 
 	Sphere::Sphere(float3 position, float radius, int lats, int longs)

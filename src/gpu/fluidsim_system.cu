@@ -277,7 +277,30 @@ namespace FluidSim {
 			uint3 dim_vox = make_uint3(ceil(world_size.x / vox_size),
 				ceil(world_size.y / vox_size),
 				ceil(world_size.z / vox_size));
-			marchingCube_ = new MarchingCube(dim_vox, sim_ratio, world_origin, vox_size, sys_param_->rest_dens);
+			marchingCube_ = new MarchingCube(dim_vox, sim_ratio, world_origin, vox_size, sys_param_->rest_dens, sys_param_->max_particles);
+
+			//Init GL
+			glGenVertexArrays(1, &vao_);
+			glBindVertexArray(vao_);
+
+			glGenBuffers(1, &p_vbo_);
+			glBindBuffer(GL_ARRAY_BUFFER, p_vbo_);
+			vec_p_ = std::vector<float>(max_particles * 3, 0.f);
+			glBufferData(GL_ARRAY_BUFFER, 3 * max_particles * sizeof(GLfloat), &vec_p_[0], GL_DYNAMIC_DRAW);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			glEnableVertexAttribArray(0);
+
+			glGenBuffers(1, &c_vbo_);
+			glBindBuffer(GL_ARRAY_BUFFER, c_vbo_);
+			vec_c_ = std::vector<float>(max_particles * 3, 0.f);
+			glBufferData(GL_ARRAY_BUFFER, 3 * max_particles * sizeof(GLfloat), &vec_c_[0], GL_DYNAMIC_DRAW);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			glEnableVertexAttribArray(1);
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glDisableVertexAttribArray(0);
+			glDisableVertexAttribArray(1);
 		}
 
 		__host__
@@ -558,15 +581,38 @@ namespace FluidSim {
 			cudaMemcpy(particles_, dev_particles_, sizeof(Particle)*sys_param_->num_particles, cudaMemcpyDeviceToHost);
 		}
 
+		void SimulateSystem::render_particles()
+		{
+			for (int i = 0; i < sys_param_->num_particles; ++i)
+			{
+				vec_p_[3 * i] = particles_[i].pos.x;
+				vec_p_[3 * i + 1] = particles_[i].pos.y;
+				vec_p_[3 * i + 2] = particles_[i].pos.z;
+				vec_c_[3 * i] = 0.2;
+				vec_c_[3 * i + 1] = particles_[i].dens / 5000.f;
+				vec_c_[3 * i + 2] = 0.3;
+			}
+			glBindBuffer(GL_ARRAY_BUFFER, p_vbo_);
+			glBufferData(GL_ARRAY_BUFFER, 3 * sys_param_->max_particles * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+			glBufferSubData(GL_ARRAY_BUFFER, 0, 3 * sys_param_->num_particles * sizeof(GLfloat), &vec_p_[0]);
+
+			glBindBuffer(GL_ARRAY_BUFFER, c_vbo_);
+			glBufferData(GL_ARRAY_BUFFER, 3 * sys_param_->max_particles * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+			glBufferSubData(GL_ARRAY_BUFFER, 0, 3 * sys_param_->num_particles * sizeof(GLfloat), &vec_c_[0]);
+
+			glBindVertexArray(vao_);
+			glDrawArrays(GL_POINTS, 0, 3 * sys_param_->num_particles);
+		}
+
 		void SimulateSystem::render_static_object()
 		{
-			glPushMatrix();
-			glTranslatef(sys_param_->sim_origin.x, sys_param_->sim_origin.y, sys_param_->sim_origin.z);
-			glScalef(sys_param_->sim_ratio.x, sys_param_->sim_ratio.y, sys_param_->sim_ratio.z);
+			//glPushMatrix();
+			//glTranslatef(sys_param_->sim_origin.x, sys_param_->sim_origin.y, sys_param_->sim_origin.z);
+			//glScalef(sys_param_->sim_ratio.x, sys_param_->sim_ratio.y, sys_param_->sim_ratio.z);
 			//render static scene objects
 			for (auto obj : scene_objects)
 				obj->render();
-			glPopMatrix();
+			//glPopMatrix();
 		}
 		
 		__host__

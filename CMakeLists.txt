@@ -59,6 +59,11 @@ if(BUILD_CUDA)
 add_definitions(-DBUILD_CUDA)
 add_executable(dambreak_cuda ${CMAKE_SOURCE_DIR}/examples/gpu/main_gpu.cpp )
 target_link_libraries(dambreak_cuda fluidsim_sph_gpu ${OpenCV_LIBS})
+add_executable(dambreak_cuda_glfw ${CMAKE_SOURCE_DIR}/examples/gpu/main_gpu_glfw.cpp 
+								  ${CMAKE_SOURCE_DIR}/common/gl_utils.cpp
+								  ${CMAKE_SOURCE_DIR}/common/maths_funcs.cpp
+								  ${CMAKE_SOURCE_DIR}/common/obj_parser.cpp)
+target_link_libraries(dambreak_cuda_glfw fluidsim_sph_gpu ${OpenCV_LIBS})
 else()
 add_executable(dambreak ${CMAKE_SOURCE_DIR}/examples/main.cpp)
 target_link_libraries(dambreak fluidsim_sph ${OpenCV_LIBS})

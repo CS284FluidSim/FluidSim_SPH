@@ -97,6 +97,8 @@ namespace FluidSim {
 			__host__
 				virtual void animation();
 			__host__
+				void render_particles();
+			__host__
 				void render_surface(MarchingCube::RenderMode rm);
 			__host__
 				void render_static_object();
@@ -168,6 +170,12 @@ namespace FluidSim {
 			uint * dev_index_;
 			uint* dev_start_;
 			uint* dev_end_;
+
+			GLuint vao_;
+			GLuint p_vbo_;
+			GLuint c_vbo_;
+			std::vector<float> vec_p_;
+			std::vector<float> vec_c_;
 
 			std::vector<SceneObject *> scene_objects;
 		};
