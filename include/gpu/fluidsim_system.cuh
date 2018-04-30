@@ -87,11 +87,9 @@ namespace FluidSim {
 			__host__
 				void add_fluid(const float3 &scale_const); // add object fluid
 			__host__
-				void add_static_object(const float3 &cube_pos_min, const float3 &cube_pos_max);  // add static object
+				void add_static_object(Cube *cube);
 			__host__
-				void add_static_object(const float3 &sphere_pos, const float &radius);  // add static object
-			__host__
-				void add_static_object(const float3 &scale_const);  // add static object
+				void add_static_object(Sphere *sphere);
 			__host__
 				void start();
 			__host__

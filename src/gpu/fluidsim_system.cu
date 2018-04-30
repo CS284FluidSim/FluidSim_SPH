@@ -230,6 +230,8 @@ namespace FluidSim {
 			sys_param_->h = h;
 			sys_param_->mass = mass;
 
+			sys_param_->sim_ratio = sim_ratio;
+			sys_param_->sim_origin = world_origin;
 			sys_param_->world_size = world_size;
 			sys_param_->cell_size = sys_param_->h;
 			sys_param_->grid_size.x = (int)ceil(sys_param_->world_size.x / sys_param_->cell_size);
@@ -442,7 +444,8 @@ namespace FluidSim {
 			}
 		}
 
-		void SimulateSystem::add_static_object(const float3 & cube_pos_min, const float3 & cube_pos_max)
+		__host__
+		void SimulateSystem::add_static_object(Cube *cube)
 		{
 			if (is_running())
 			{
@@ -452,11 +455,15 @@ namespace FluidSim {
 
 			float3 pos;
 			int count = 0;
-			for (pos.x = sys_param_->world_size.x*cube_pos_min.x; pos.x < sys_param_->world_size.x*cube_pos_max.x; pos.x += sys_param_->cell_size)
+
+			float3 cube_pos = cube->get_position();
+			float3 cube_side = cube->get_side();
+
+			for (pos.x = cube_pos.x-cube_side.x/2.f; pos.x < cube_pos.x + cube_side.x / 2.f; pos.x += sys_param_->cell_size*0.5f)
 			{
-				for (pos.y = sys_param_->world_size.y*cube_pos_min.y; pos.y < sys_param_->world_size.y*cube_pos_max.y; pos.y += sys_param_->cell_size)
+				for (pos.y = cube_pos.y - cube_side.y / 2.f; pos.y < cube_pos.y + cube_side.y / 2.f; pos.y += sys_param_->cell_size*0.5f)
 				{
-					for (pos.z = sys_param_->world_size.z*cube_pos_min.z; pos.z < sys_param_->world_size.z*cube_pos_max.z; pos.z += sys_param_->cell_size)
+					for (pos.z = cube_pos.z - cube_side.z / 2.f; pos.z < cube_pos.z + cube_side.z / 2.f; pos.z += sys_param_->cell_size*0.5f)
 					{
 						int3 cell_pos = calc_cell_pos(pos, sys_param_->cell_size);
 						int index = cell_pos.z*sys_param_->grid_size.x*sys_param_->grid_size.y + cell_pos.y*sys_param_->grid_size.x + cell_pos.x;
@@ -464,8 +471,49 @@ namespace FluidSim {
 					}
 				}
 			}
-			SceneObject *obj = new Cube({ 0.f,0.f,0.f }, { 1.f,1.f,1.f });
-			scene_objects.push_back(obj);
+
+			scene_objects.push_back(cube);
+			cudaMemcpy(dev_occupied_, occupied_, sizeof(int)*sys_param_->total_cells, cudaMemcpyHostToDevice);
+		}
+
+		__host__
+		void SimulateSystem::add_static_object(Sphere * sphere)
+		{
+			float3 pos;
+
+			float3 sphere_pos = sphere->get_position();
+			float radius = sphere->get_radius();
+
+			// calculate the bounding box of sphere
+			float3 pos_min = sphere_pos - make_float3(radius, radius, radius);
+			float3 pos_max = sphere_pos + make_float3(radius, radius, radius);
+
+			if (pos_min.x < 0.f || pos_min.y < 0.f || pos_min.z < 0.f)
+			{
+				std::cout << "Out of bottom limit" << std::endl;
+			}
+			if (pos_max.x > sys_param_->world_size.x || pos_max.y > sys_param_->world_size.y || pos_max.z > sys_param_->world_size.z)
+			{
+				std::cout << "Out of top limit" << std::endl;
+			}
+
+			for (pos.x = pos_min.x; pos.x <= pos_max.x; pos.x += sys_param_->cell_size*0.5f)
+			{
+				for (pos.y = pos_min.y; pos.y <= pos_max.y; pos.y += sys_param_->cell_size*0.5f)
+				{
+					for (pos.z = pos_min.z; pos.z <= pos_max.z; pos.z += sys_param_->cell_size*0.5f)
+					{
+						if (length(pos - sphere_pos) <= radius)
+						{
+							int3 cell_pos = calc_cell_pos(pos, sys_param_->cell_size);
+							int index = cell_pos.z*sys_param_->grid_size.x*sys_param_->grid_size.y + cell_pos.y*sys_param_->grid_size.x + cell_pos.x;
+							occupied_[index] = 1;
+						}
+					}
+				}
+			}
+
+			scene_objects.push_back(sphere);
 			cudaMemcpy(dev_occupied_, occupied_, sizeof(int)*sys_param_->total_cells, cudaMemcpyHostToDevice);
 		}
 
@@ -508,9 +556,13 @@ namespace FluidSim {
 		__host__
 			void SimulateSystem::render(MarchingCube::RenderMode rm)
 		{
+			glPushMatrix();
+			glTranslatef(sys_param_->sim_origin.x, sys_param_->sim_origin.y, sys_param_->sim_origin.z);
+			glScalef(sys_param_->sim_ratio.x, sys_param_->sim_ratio.y, sys_param_->sim_ratio.z);
 			//render static scene objects
 			for (auto obj : scene_objects)
 				obj->render();
+			glPopMatrix();
 			//render fluid mesh
 			marchingCube_->render(rm);
 		}

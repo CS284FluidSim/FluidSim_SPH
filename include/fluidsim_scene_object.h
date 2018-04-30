@@ -20,6 +20,10 @@ namespace FluidSim
 		void set_shader(GLuint shader) {
 			shader_ = shader;
 		}
+		float3 get_position()
+		{
+			return position_;
+		}
 	};
 
 	class Cube :public SceneObject
@@ -28,6 +32,8 @@ namespace FluidSim
 		float3 side_;
 	public:
 		Cube(float3 position, float3 side);
+		float3 get_position() { return position_; };
+		float3 get_side() { return side_; };
 		virtual void render();
 	};
 
@@ -42,8 +48,11 @@ namespace FluidSim
 
 	class Sphere :public SceneObject
 	{
+	private:
+		float radius_;
 	public:
 		Sphere(float3 position, float radius);
+		float get_radius() { return radius_; };
 		virtual void render();
 	};
 

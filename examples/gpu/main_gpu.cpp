@@ -26,8 +26,8 @@ FluidSim::Timer *timer;
 
 //OpenGL global variable
 //light
-float light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-float light_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+float light_specular[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+float light_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 float light_diffuse[] = { 0.0f, 0.5f, 1.0f, 1.0f };
 float light_position[] = { 0.0f, 50.0f, 0.0f, 1.0f };
 //material
@@ -76,11 +76,9 @@ using namespace FluidSim;
 
 void draw_skybox()
 {
-	glDepthMask(GL_FALSE);
 	glUseProgram(phong_shader);
 	glBindVertexArray(skyboxVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glDepthMask(GL_TRUE);
 }
 
 void draw_box(float ox, float oy, float oz, float width, float height, float length)
@@ -193,19 +191,21 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
 
-		simsystem->add_cube_fluid(make_float3(0.9f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
+		simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
 
 		//simsystem->add_cube_fluid(make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f, 0.2f, 1.0f), gap);
 
 		//simsystem->add_fluid(make_float3(0.2f, 0.5f, 0.1f), make_float3(0.7f, 0.9f, 0.9f));  // a cube drop from the air
 
-		//simsystem->add_fluid(make_float3(0.5f, 0.5f, 0.5f), 0.4f);  // a sphere drop from the air
+		//simsystem->add_fluid(make_float3(0.5f, 0.7f, 0.5f), 0.3f);  // a sphere drop from the air
 
 		//simsystem->add_fluid(make_float3(4.5f, 4.5f, 4.5f));  // a bunny drop
 		
 		//simsystem->add_fluid(make_float3(1.5f, 1.5f, 1.5f));  // a bunny drop
-
-		simsystem->add_static_object({ 0.3f,0.0f,0.3f }, { 0.7f,0.7f,0.7f });
+		Cube *cube = new Cube({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 
+							  { 0.2f*world_size.x,0.4f*world_size.y,0.5f*world_size.z });
+		//Sphere *sphere = new Sphere({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 0.4f);
+		simsystem->add_static_object(cube);
 	}
 	else
 	{
@@ -359,7 +359,7 @@ void display_func()
 	render_simulation();
 
 	draw_box(real_world_origin.x, real_world_origin.y, real_world_origin.z, real_world_side.x, real_world_side.y, real_world_side.z);
-
+	
 	//draw_skybox();
 
 	glPopMatrix();
