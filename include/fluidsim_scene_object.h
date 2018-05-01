@@ -69,6 +69,7 @@ namespace FluidSim
 		~Model();
 		virtual void render();
 	};
+
 }
 
 #endif

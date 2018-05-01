@@ -49,18 +49,15 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	{
 		if (primitive_mode == 0)
 		{
-			//simsystem->change_mass(0.01f);
 			simsystem->add_fluid(make_float3(0.45f, 0.8f, 0.45f), make_float3(0.55f, 1.0f, 0.55f), make_float3(0.0f, -2.0f, 0.0f));  // drop cube
 		}
 		else if (primitive_mode == 1)
 		{
-			//simsystem->change_mass(0.01f);
 			simsystem->add_fluid(make_float3(0.5f, 0.8f, 0.5f), 0.1f, make_float3(0.0f, -2.0f, 0.0f));  // drop sphere
 		}
 		else if (primitive_mode == 2)
 		{
-			//simsystem->change_mass(0.01f);
-			simsystem->add_fluid(make_float3(1.3f, 1.3f, 1.3f));  // a bunny drop
+			simsystem->add_fluid(make_float3(4.5f,4.5f,4.5f));  // a bunny drop
 		}
 	}
 	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
@@ -182,15 +179,22 @@ void init_sph_system(std::string config_path)
 		FluidSim::TexturedCube *rightwall = new FluidSim::TexturedCube({ world_size.x,0.5f*world_size.y,0.5f*world_size.z },
 		{ 0.01f, world_size.y, world_size.z }, frame_texture);
 		rightwall->set_shader(&texcube_shader);
+		
 		//Model *model = new Model("../scene/bunny.txt", { 0.5f*world_size.x,0.5f*world_size.y,0.5f*world_size.z }, 0.1f);
 		//simsystem->add_static_object(cube);
 		//simsystem->add_static_object(cube);
 		//simsystem->add_static_object(cube1);
+		
 		simsystem->add_static_object(tex_cube);
 		simsystem->add_static_object(bottomwall, false);
 		simsystem->add_static_object(backwall, false);
 		simsystem->add_static_object(leftwall, false);
 		simsystem->add_static_object(rightwall, false);
+
+
+		// dambreak add cylinder
+
+
 	}
 }
 
@@ -345,7 +349,11 @@ int main() {
 		glfwSetMouseButtonCallback(g_window, mouse_button_callback);
 
 		if (glfwGetKey(g_window, GLFW_KEY_0)) {
+<<<<<<< HEAD
 			primitive_mode = 0;
+=======
+			renderMode = 0;
+>>>>>>> 002f16a70055b9eb0871734b03defe19f0ae92ea
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_1)) {
 			primitive_mode = 1;

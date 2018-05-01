@@ -1,0 +1,31 @@
+%YAML:1.0
+
+#simulation size
+world_size.x: 2.56
+world_size.y: 1.28
+world_size.z: 1.28
+max_particles: 550000
+
+#sph parameters
+h: 0.04
+mass: 0.02
+gravity.x: 0.0
+gravity.y: -9.8
+gravity.z: 0.0
+bound_damping: -0.5
+rest_dens: 1000.0
+gas_const: 1.0
+visc: 4.0
+timestep: 0.003
+surf_norm: 6.0
+surf_coef: 0.8
+
+#fluids
+cube_min.x: 0.7
+cube_min.y: 0.0
+cube_min.z: 0.0
+cube_max.x: 1.0
+cube_max.y: 0.3
+cube_max.z: 1.0
+
+gap: 0.5
