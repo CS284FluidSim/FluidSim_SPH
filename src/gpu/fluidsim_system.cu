@@ -477,11 +477,10 @@ namespace FluidSim {
 			}
 
 			float3 pos;
+			float3 cube_pos = make_float3(cube->get_position().v[0], cube->get_position().v[1], cube->get_position().v[2]);
+			float3 cube_side = make_float3(cube->get_side().v[0], cube->get_side().v[1], cube->get_side().v[2]);
+
 			int count = 0;
-
-			float3 cube_pos = cube->get_position();
-			float3 cube_side = cube->get_side();
-
 			for (pos.x = cube_pos.x-cube_side.x/2.f; pos.x < cube_pos.x + cube_side.x / 2.f; pos.x += sys_param_->cell_size*0.5f)
 			{
 				for (pos.y = cube_pos.y - cube_side.y / 2.f; pos.y < cube_pos.y + cube_side.y / 2.f; pos.y += sys_param_->cell_size*0.5f)
@@ -491,6 +490,7 @@ namespace FluidSim {
 						int3 cell_pos = calc_cell_pos(pos, sys_param_->cell_size);
 						int index = cell_pos.z*sys_param_->grid_size.x*sys_param_->grid_size.y + cell_pos.y*sys_param_->grid_size.x + cell_pos.x;
 						occupied_[index] = 1;
+						count++;
 					}
 				}
 			}
@@ -504,7 +504,7 @@ namespace FluidSim {
 		{
 			float3 pos;
 
-			float3 sphere_pos = sphere->get_position();
+			float3 sphere_pos = make_float3(sphere->get_position().v[0], sphere->get_position().v[1], sphere->get_position().v[2]);
 			float radius = sphere->get_radius();
 
 			// calculate the bounding box of sphere
@@ -606,13 +606,8 @@ namespace FluidSim {
 
 		void SimulateSystem::render_static_object()
 		{
-			//glPushMatrix();
-			//glTranslatef(sys_param_->sim_origin.x, sys_param_->sim_origin.y, sys_param_->sim_origin.z);
-			//glScalef(sys_param_->sim_ratio.x, sys_param_->sim_ratio.y, sys_param_->sim_ratio.z);
-			//render static scene objects
 			for (auto obj : scene_objects)
 				obj->render();
-			//glPopMatrix();
 		}
 		
 		__host__

@@ -20,6 +20,9 @@ SET(SOURCE
     ${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp
 	${CMAKE_SOURCE_DIR}/src/fluidsim_scene_object.cpp
     ${CMAKE_SOURCE_DIR}/src/fluidsim_gl_utils.cpp
+	${CMAKE_SOURCE_DIR}/src/fluidsim_shader.cpp
+	${CMAKE_SOURCE_DIR}/common/maths_funcs.cpp
+	${CMAKE_SOURCE_DIR}/common/obj_parser.cpp
     ${CMAKE_SOURCE_DIR}/common/stb_image.c
 )
 SET(HEADERS
@@ -30,7 +33,7 @@ SET(HEADERS
 	${CMAKE_SOURCE_DIR}/include/fluidsim_timer.h
 	${CMAKE_SOURCE_DIR}/include/fluidsim_scene_object.h
 	${CMAKE_SOURCE_DIR}/include/fluidsim_gl_utils.h
-	${CMAKE_SOURCE_DIR}/common/stb_image.h
+	${CMAKE_SOURCE_DIR}/include/fluidsim_shader.h
 )
 cuda_add_library(fluidsim_sph_gpu ${SOURCE} ${HEADERS})
 target_link_libraries(fluidsim_sph_gpu ${OpenCV_LIBS})
@@ -59,10 +62,7 @@ if(BUILD_CUDA)
 add_definitions(-DBUILD_CUDA)
 add_executable(dambreak_cuda ${CMAKE_SOURCE_DIR}/examples/gpu/main_gpu.cpp )
 target_link_libraries(dambreak_cuda fluidsim_sph_gpu ${OpenCV_LIBS})
-add_executable(dambreak_cuda_glfw ${CMAKE_SOURCE_DIR}/examples/gpu/main_gpu_glfw.cpp 
-								  ${CMAKE_SOURCE_DIR}/common/gl_utils.cpp
-								  ${CMAKE_SOURCE_DIR}/common/maths_funcs.cpp
-								  ${CMAKE_SOURCE_DIR}/common/obj_parser.cpp)
+add_executable(dambreak_cuda_glfw ${CMAKE_SOURCE_DIR}/examples/gpu/main_gpu_glfw.cpp)
 target_link_libraries(dambreak_cuda_glfw fluidsim_sph_gpu ${OpenCV_LIBS})
 else()
 add_executable(dambreak ${CMAKE_SOURCE_DIR}/examples/main.cpp)

@@ -3,10 +3,10 @@
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-#include <cuda_runtime.h>
-
 #include <string>
 #include <vector>
+#include <maths_funcs.h>
+#include "fluidsim_shader.h"
 
 namespace FluidSim
 {
@@ -17,36 +17,31 @@ namespace FluidSim
 		GLuint vbo_ = 0;
 		GLuint ebo_ = 0;
 		GLuint nvbo_ = 0;
-		GLuint shader_ = 0;
-		float3 position_ = {0.f,0.f,0.f};
+		Shader *shader_ = 0;
+		vec3 position_;
+		mat4 M_;
 	public:
 		virtual void render() = 0;
-		void set_shader(GLuint shader) {
-			shader_ = shader;
-		}
-		float3 get_position()
-		{
-			return position_;
-		}
+		void set_shader(Shader *shader) { shader_ = shader; }
+		vec3 get_position() { return position_; };
 	};
 
 	class Cube :public SceneObject
 	{
 	private:
-		float3 side_;
+		vec3 side_;
 	public:
-		Cube(float3 position, float3 side);
-		float3 get_position() { return position_; };
-		float3 get_side() { return side_; };
+		Cube(vec3 position, vec3 side);
+		vec3 get_side() { return side_; };
 		virtual void render();
 	};
 
 	class TexturedCube : public Cube
 	{
 	private:
-		GLuint tex_id;
+		GLuint tex_id_;
 	public:
-		TexturedCube(float3 position, float3 side, GLuint tex_id);
+		TexturedCube(vec3 position, vec3 side, GLuint tex_id);
 		virtual void render();
 	};
 
@@ -58,7 +53,7 @@ namespace FluidSim
 		int longs_;
 		int num_vertices_;
 	public:
-		Sphere(float3 position, float radius, int lats = 40, int longs = 40);
+		Sphere(vec3 position, float radius, int lats = 40, int longs = 40);
 		float get_radius() { return radius_; };
 		virtual void render();
 	};
@@ -70,7 +65,7 @@ namespace FluidSim
 		float scale_;
 		int num_vertices_;
 	public:
-		Model(std::string path, float3 position, float scale);
+		Model(std::string path, vec3 position, float scale);
 		~Model();
 		virtual void render();
 	};

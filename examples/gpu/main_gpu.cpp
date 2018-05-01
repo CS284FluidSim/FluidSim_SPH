@@ -14,9 +14,14 @@
 #include <vector>
 
 
-
+#pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "glew32.lib") 
 #define GPU_MC
+
+int g_gl_width = 960;
+int g_gl_height = 640;
+GLFWwindow *g_window = NULL;
+mat4 proj_mat;
 
 using json = nlohmann::json;
 
@@ -207,7 +212,7 @@ void init_sph_system(std::string config_path)
 		Sphere *sphere = new Sphere({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 0.4f);
 		//Model *model = new Model("../scene/bunny.txt", { 0.5f*world_size.x,0.5f*world_size.y,0.5f*world_size.z }, 0.1f);
 		//simsystem->add_static_object(cube);
-		simsystem->add_static_object(cube);
+		simsystem->add_static_object(sphere);
 	}
 	else
 	{
@@ -244,10 +249,10 @@ void init_cube_map(string cube_path)
 	texture_path.push_back(cube_path + "/posz.jpg");
 	texture_path.push_back(cube_path + "/negz.jpg");
 
-	skyboxVAO = create_cube_vao(10.f);
-	cube_tex_id = create_cube_map_tex(texture_path[0].c_str(), texture_path[1].c_str(), 
-		texture_path[2].c_str(), texture_path[3].c_str(), 
-		texture_path[4].c_str(), texture_path[5].c_str());
+	//skyboxVAO = create_cube_vao(10.f);
+	//cube_tex_id = create_cube_map_tex(texture_path[0].c_str(), texture_path[1].c_str(), 
+	//	texture_path[2].c_str(), texture_path[3].c_str(), 
+	//	texture_path[4].c_str(), texture_path[5].c_str());
 }
 
 void render_simulation()
@@ -257,8 +262,8 @@ void render_simulation()
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	glUseProgram(0);
-	simsystem->render_static_object();
+	//glUseProgram(0);
+	//simsystem->render_static_object();
 
 	if (render_mode != 3)
 	{
@@ -305,7 +310,7 @@ void render_simulation()
 	}
 	else
 	{
-		glUseProgram(phong_shader);
+		glUseProgram(0);
 		if (simsystem->is_running())
 		{
 			if (mc_render_mode == 0)
@@ -512,9 +517,9 @@ int main(int argc, char **argv)
 	init_cube_map(argv[2]);
 	init_sph_system(argv[1]);
 
-	phong_shader = create_shader_program("../shader/phong.vs", "../shader/phong.fs");
-	particle_shader = create_shader_program("../shader/particle.vs", "../shader/particle.fs");
-	skybox_shader = create_shader_program("../shader/skybox.vs", "../shader/skybox.fs");
+	//phong_shader = create_shader_program("../shader/phong.vs", "../shader/phong.fs");
+	//particle_shader = create_shader_program("../shader/particle.vs", "../shader/particle.fs");
+	//skybox_shader = create_shader_program("../shader/skybox.vs", "../shader/skybox.fs");
 
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
 	glEnable(GL_POINT_SPRITE_ARB);
