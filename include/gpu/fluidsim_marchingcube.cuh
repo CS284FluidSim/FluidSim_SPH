@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 #include <cuda_runtime.h>
 #include <helper_math.h>
 
@@ -44,6 +45,8 @@ namespace FluidSim {
 			MarchingCubeParam *param_;
 			MarchingCubeParam *dev_param_;
 
+			int max_particles_;
+
 			float3 *pos_;
 			float *scalar_;
 			float3 *normal_;
@@ -54,9 +57,16 @@ namespace FluidSim {
 
 			//Output Triangle
 			Triangle *dev_tri_;
-			Triangle *dev_tri_non_empty;
+			//Triangle *dev_tri_non_empty;
 			Triangle *tri_;
 
+			unsigned int vao_;
+			unsigned int ebo_;
+			unsigned int p_vbo_;
+			unsigned int n_vbo_;
+
+			std::vector<float> vec_p_;
+			std::vector<float> vec_n_;
 		public:
 			enum RenderMode {
 				TRI, NORMAL, SCALAR, POS
@@ -64,7 +74,7 @@ namespace FluidSim {
 
 		public:
 			__host__
-				MarchingCube(uint3 dim_vox, float3 sim_ratio, float3 origin, float step, float isovalue);
+				MarchingCube(uint3 dim_vox, float3 sim_ratio, float3 origin, float step, float isovalue, int max_particles);
 			__host__
 				~MarchingCube();
 			__host__
@@ -73,8 +83,6 @@ namespace FluidSim {
 				void compute(Particle *dev_particles);
 			__host__
 				void render(RenderMode rm);
-
-
 
 		private:
 			__host__

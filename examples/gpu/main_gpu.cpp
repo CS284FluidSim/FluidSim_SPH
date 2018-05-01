@@ -15,9 +15,14 @@
 
 #include "gpu/fluidsim_pci_system.cuh"
 
-
+#pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "glew32.lib") 
 #define GPU_MC
+
+int g_gl_width = 960;
+int g_gl_height = 640;
+GLFWwindow *g_window = NULL;
+mat4 proj_mat;
 
 using json = nlohmann::json;
 
@@ -28,8 +33,8 @@ FluidSim::Timer *timer;
 
 //OpenGL global variable
 //light
-float light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-float light_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+float light_specular[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+float light_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 float light_diffuse[] = { 0.0f, 0.5f, 1.0f, 1.0f };
 float light_position[] = { 0.0f, 50.0f, 0.0f, 1.0f };
 //material
@@ -78,11 +83,9 @@ using namespace FluidSim;
 
 void draw_skybox()
 {
-	glDepthMask(GL_FALSE);
 	glUseProgram(phong_shader);
 	glBindVertexArray(skyboxVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glDepthMask(GL_TRUE);
 }
 
 void draw_box(float ox, float oy, float oz, float width, float height, float length)
@@ -198,19 +201,27 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
 
-		simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.7f, 1.0f), gap);
+		simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
+
 
 		//simsystem->add_cube_fluid(make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f, 0.2f, 1.0f), gap);
 
 		//simsystem->add_fluid(make_float3(0.2f, 0.5f, 0.1f), make_float3(0.7f, 0.9f, 0.9f));  // a cube drop from the air
 
-		//simsystem->add_fluid(make_float3(0.5f, 0.5f, 0.5f), 0.4f);  // a sphere drop from the air
+		//simsystem->add_fluid(make_float3(0.5f, 0.7f, 0.5f), 0.3f);  // a sphere drop from the air
 
 		//simsystem->add_fluid(make_float3(4.5f, 4.5f, 4.5f));  // a bunny drop
 		
 		//simsystem->add_fluid(make_float3(1.5f, 1.5f, 1.5f));  // a bunny drop
 
 		//simsystem->add_static_object({ 0.3f,0.0f,0.3f }, { 0.7f,0.7f,0.7f });
+
+		Cube *cube = new Cube({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 
+							  { 0.2f*world_size.x,0.4f*world_size.y,0.5f*world_size.z });
+		Sphere *sphere = new Sphere({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 0.4f);
+		//Model *model = new Model("../scene/bunny.txt", { 0.5f*world_size.x,0.5f*world_size.y,0.5f*world_size.z }, 0.1f);
+		//simsystem->add_static_object(cube);
+		simsystem->add_static_object(sphere);
 	}
 	else
 	{
@@ -248,10 +259,10 @@ void init_cube_map(string cube_path)
 	texture_path.push_back(cube_path + "/posz.jpg");
 	texture_path.push_back(cube_path + "/negz.jpg");
 
-	skyboxVAO = create_cube_vao(10.f);
-	cube_tex_id = create_cube_map_tex(texture_path[0].c_str(), texture_path[1].c_str(), 
-		texture_path[2].c_str(), texture_path[3].c_str(), 
-		texture_path[4].c_str(), texture_path[5].c_str());
+	//skyboxVAO = create_cube_vao(10.f);
+	//cube_tex_id = create_cube_map_tex(texture_path[0].c_str(), texture_path[1].c_str(), 
+	//	texture_path[2].c_str(), texture_path[3].c_str(), 
+	//	texture_path[4].c_str(), texture_path[5].c_str());
 }
 
 void render_simulation()
@@ -260,6 +271,9 @@ void render_simulation()
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	//glUseProgram(0);
+	//simsystem->render_static_object();
 
 	if (render_mode != 3)
 	{
@@ -307,7 +321,7 @@ void render_simulation()
 	}
 	else
 	{
-		glUseProgram(phong_shader);
+		glUseProgram(0);
 		if (simsystem->is_running())
 		{
 			if (mc_render_mode == 0)
@@ -328,7 +342,7 @@ void render_simulation()
 				case 3:rm = FluidSim::gpu::MarchingCube::RenderMode::POS; break;
 			}
 			glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-			simsystem->render(rm);
+			simsystem->render_surface(rm);
 			if (mc_render_mode == 0)
 			{
 				glDisable(GL_LIGHTING);
@@ -366,7 +380,7 @@ void display_func()
 	render_simulation();
 
 	draw_box(real_world_origin.x, real_world_origin.y, real_world_origin.z, real_world_side.x, real_world_side.y, real_world_side.z);
-
+	
 	//draw_skybox();
 
 	glPopMatrix();
@@ -514,9 +528,9 @@ int main(int argc, char **argv)
 	init_cube_map(argv[2]);
 	init_sph_system(argv[1]);
 
-	phong_shader = create_shader_program("../shader/phong.vs", "../shader/phong.fs");
-	particle_shader = create_shader_program("../shader/particle.vs", "../shader/particle.fs");
-	skybox_shader = create_shader_program("../shader/skybox.vs", "../shader/skybox.fs");
+	//phong_shader = create_shader_program("../shader/phong.vs", "../shader/phong.fs");
+	//particle_shader = create_shader_program("../shader/particle.vs", "../shader/particle.fs");
+	//skybox_shader = create_shader_program("../shader/skybox.vs", "../shader/skybox.fs");
 
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
 	glEnable(GL_POINT_SPRITE_ARB);

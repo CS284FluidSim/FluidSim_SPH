@@ -422,7 +422,7 @@ namespace FluidSim{
 			uint3 dim_vox = make_uint3(ceil(world_size.x / vox_size),
 				ceil(world_size.y / vox_size),
 				ceil(world_size.z / vox_size));
-			marchingCube_ = new MarchingCube(dim_vox, sim_ratio, world_origin, vox_size, sys_param_->rest_dens);
+			marchingCube_ = new MarchingCube(dim_vox, sim_ratio, world_origin, vox_size, sys_param_->rest_dens, sys_param_->max_particles);
 
 			// PCISPH parameters
 			sys_param_->minIteration = 3;

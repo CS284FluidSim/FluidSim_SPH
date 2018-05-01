@@ -91,23 +91,27 @@ namespace FluidSim {
 			__host__
 				void add_cube_fluid(const float3 &pos_min, const float3 &pos_max, const float gap);
 			__host__
-				void add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max); // add cude fluid
+				void add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max, float3 velocity = {0.0f, 0.0f, 0.0f}); // add cude fluid
 			__host__
 				void add_fluid(const float3 &sphere_pos, const float &radius);  // add sphere fluid
 			__host__
 				void add_fluid(const float3 &scale_const); // add object fluid
 			__host__
-				void add_static_object(const float3 &cube_pos_min, const float3 &cube_pos_max);  // add static object
+				void add_static_object(Cube *cube);
 			__host__
-				void add_static_object(const float3 &sphere_pos, const float &radius);  // add static object
+				void add_static_object(Sphere *sphere);
 			__host__
-				void add_static_object(const float3 &scale_const);  // add static object
+				void add_static_object(Model *model);
 			__host__
 				void start();
 			__host__
 				virtual void animation();
 			__host__
-				void render(MarchingCube::RenderMode rm);
+				void render_particles();
+			__host__
+				void render_surface(MarchingCube::RenderMode rm);
+			__host__
+				void render_static_object();
 			__host__
 				bool is_running() {
 				return sys_running_;
@@ -176,6 +180,12 @@ namespace FluidSim {
 			uint * dev_index_;
 			uint* dev_start_;
 			uint* dev_end_;
+
+			GLuint vao_;
+			GLuint p_vbo_;
+			GLuint c_vbo_;
+			std::vector<float> vec_p_;
+			std::vector<float> vec_c_;
 
 			std::vector<SceneObject *> scene_objects;
 		};

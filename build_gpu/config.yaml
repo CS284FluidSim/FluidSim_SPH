@@ -1,10 +1,10 @@
 %YAML:1.0
 
 #simulation size
-world_size.x: 1.28
+world_size.x: 2.56
 world_size.y: 1.28
 world_size.z: 1.28
-max_particles: 500000
+max_particles: 250000
 
 #sph parameters
 h: 0.04
@@ -12,7 +12,7 @@ mass: 0.015
 gravity.x: 0.0
 gravity.y: -9.8
 gravity.z: 0.0
-bound_damping: -1.0
+bound_damping: -0.5
 rest_dens: 1000.0
 gas_const: 3.0
 visc: 4.0

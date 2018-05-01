@@ -1,6 +1,6 @@
-#include <gl/freeglut.h>
 #include <stdio.h>
 #include <iostream>
+#include <GL/glew.h>
 
 #include <cuda_runtime.h>
 #include <helper_math.h>
@@ -9,6 +9,8 @@
 #include <thrust\device_ptr.h>
 
 #include "gpu/fluidsim_marchingcube.cuh"
+
+#include <vector>
 
 namespace FluidSim {
 
@@ -48,11 +50,11 @@ namespace FluidSim {
 				int cell_pos_x = (dev_particles[global_index].pos.x) / vox_size;
 				int cell_pos_y = (dev_particles[global_index].pos.y) / vox_size;
 				int cell_pos_z = (dev_particles[global_index].pos.z) / vox_size;
-				for (float x = -radius; x < radius; x+=vox_size)
+				for (float x = -radius; x < radius; x += vox_size)
 				{
-					for (float y = -radius; y < radius; y+=vox_size)
+					for (float y = -radius; y < radius; y += vox_size)
 					{
-						for (float z = -radius; z < radius; z+=vox_size)
+						for (float z = -radius; z < radius; z += vox_size)
 						{
 							int pos_x = cell_pos_x + x / vox_size;
 							int pos_y = cell_pos_y + y / vox_size;
@@ -87,7 +89,7 @@ namespace FluidSim {
 
 				uint prev = 0;
 				uint next = 0;
-	
+
 
 				if (count_x == 0)
 				{
@@ -189,7 +191,7 @@ namespace FluidSim {
 
 				if (count_x >= dev_param->dim_vox.x - 1 || count_y >= dev_param->dim_vox.y - 1 || count_z >= dev_param->dim_vox.z - 1)
 					return;
-				
+
 				int flag_index;
 				int edge_flags;
 				for (uint count = 0; count < 8; count++)
@@ -203,7 +205,7 @@ namespace FluidSim {
 					cube_pos[count] = dev_pos[index];
 					cube_norm[count] = dev_normal[index];
 				}
-				
+
 				flag_index = 0;
 				for (uint count = 0; count < 8; count++)
 				{
@@ -212,13 +214,13 @@ namespace FluidSim {
 						flag_index |= 1 << count;
 					}
 				}
-		
+
 				edge_flags = dev_param->cube_edge_flags[flag_index];
 				if (edge_flags == 0)
 				{
 					return;
 				}
-			
+
 				for (uint count = 0; count < 12; count++)
 				{
 					if (edge_flags & (1 << count))
@@ -244,7 +246,7 @@ namespace FluidSim {
 						return;
 					}
 
-					uint idx = 5 * global_index+count_triangle;
+					uint idx = 5 * global_index + count_triangle;
 					dev_tri[idx].valid = 1.f;
 
 					for (uint count_point = 0; count_point < 3; count_point++)
@@ -260,7 +262,7 @@ namespace FluidSim {
 		}
 
 		__host__
-			MarchingCube::MarchingCube(uint3 dim_vox, float3 sim_ratio, float3 origin, float step, float isovalue)
+			MarchingCube::MarchingCube(uint3 dim_vox, float3 sim_ratio, float3 origin, float step, float isovalue, int max_particles)
 		{
 			param_ = new MarchingCubeParam();
 			param_->dim_vox = dim_vox;
@@ -270,7 +272,7 @@ namespace FluidSim {
 			param_->step = step;
 			param_->isovalue = isovalue;
 
-			tri_ = (Triangle *)malloc(sizeof(Triangle) * param_->tot_vox*5);
+			tri_ = (Triangle *)malloc(sizeof(Triangle) * param_->tot_vox * 5);
 			scalar_ = (float *)malloc(sizeof(float)*param_->tot_vox);
 			normal_ = (float3 *)malloc(sizeof(float3)*param_->tot_vox);
 			pos_ = (float3 *)malloc(sizeof(float3)*param_->tot_vox);
@@ -278,8 +280,32 @@ namespace FluidSim {
 			cudaMalloc(&dev_pos_, sizeof(float3)*param_->tot_vox);
 			cudaMalloc(&dev_scalar_, sizeof(float)*param_->tot_vox);
 			cudaMalloc(&dev_normal_, sizeof(float3)*param_->tot_vox);
-			cudaMalloc(&dev_tri_, sizeof(Triangle)*param_->tot_vox*5);
-			cudaMalloc(&dev_tri_non_empty, sizeof(Triangle)*param_->tot_vox*5);
+			cudaMalloc(&dev_tri_, sizeof(Triangle)*param_->tot_vox * 5);
+			//cudaMalloc(&dev_tri_non_empty, sizeof(Triangle)*param_->tot_vox*5);
+			max_particles_ = max_particles;
+
+			//Init GL
+			glGenVertexArrays(1, &vao_);
+			glBindVertexArray(vao_);
+
+			glGenBuffers(1, &p_vbo_);
+			glBindBuffer(GL_ARRAY_BUFFER, p_vbo_);
+			vec_p_ = std::vector<float>(6 * max_particles, 0.f);
+			glBufferData(GL_ARRAY_BUFFER, 6 * max_particles * sizeof(GLfloat), &vec_p_[0], GL_DYNAMIC_DRAW);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			glEnableVertexAttribArray(0);
+
+			glGenBuffers(1, &n_vbo_);
+			glBindBuffer(GL_ARRAY_BUFFER, n_vbo_);
+			vec_n_ = std::vector<float>(6 * max_particles, 0.f);
+			glBufferData(GL_ARRAY_BUFFER, 6 * max_particles * sizeof(GLfloat), &vec_n_[0], GL_DYNAMIC_DRAW);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			glEnableVertexAttribArray(1);
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glDisableVertexAttribArray(0);
+			glDisableVertexAttribArray(1);
 		}
 
 		__host__
@@ -295,7 +321,7 @@ namespace FluidSim {
 			cudaFree(dev_scalar_);
 			cudaFree(dev_normal_);
 			cudaFree(dev_tri_);
-			cudaFree(dev_tri_non_empty);
+			//cudaFree(dev_tri_non_empty);
 		}
 
 		__host__
@@ -322,7 +348,7 @@ namespace FluidSim {
 
 			cudaMemset(dev_scalar_, 0, sizeof(float)*param_->tot_vox);
 			cudaMemset(dev_normal_, 0, sizeof(float3)*param_->tot_vox);
-			cudaMemset(dev_tri_, 0, sizeof(Triangle)*param_->tot_vox*5);
+			cudaMemset(dev_tri_, 0, sizeof(Triangle)*param_->tot_vox * 5);
 
 			calc_scalar_kernel << <num_blocks, num_threads >> > (dev_particles, dev_scalar_, dev_pos_, dev_param_);
 
@@ -334,29 +360,47 @@ namespace FluidSim {
 		__host__
 			void MarchingCube::render(RenderMode rm)
 		{
+
 			if (rm == RenderMode::TRI)
 			{
 				memset(tri_, 0, sizeof(Triangle)*param_->tot_vox * 5);
-				cudaMemset(dev_tri_non_empty, 0, sizeof(Triangle)*param_->tot_vox * 5);
-				thrust::copy_if(thrust::device_ptr<Triangle>(dev_tri_), thrust::device_ptr<Triangle>(dev_tri_ + param_->tot_vox * 5), thrust::device_ptr<Triangle>(dev_tri_non_empty), is_non_empty_tri());
-				cudaMemcpy(tri_, dev_tri_non_empty, sizeof(Triangle)*param_->tot_vox * 5, cudaMemcpyDeviceToHost);
+				//cudaMemset(dev_tri_non_empty, 0, sizeof(Triangle)*param_->tot_vox * 5);
+			/*	thrust::copy_if(thrust::device_ptr<Triangle>(dev_tri_), thrust::device_ptr<Triangle>(dev_tri_ + param_->tot_vox * 5), thrust::device_ptr<Triangle>(dev_tri_non_empty), is_non_empty_tri());
+				cudaMemcpy(tri_, dev_tri_non_empty, sizeof(Triangle)*param_->tot_vox * 5, cudaMemcpyDeviceToHost);*/
+
+				cudaMemcpy(tri_, dev_tri_, sizeof(Triangle)*param_->tot_vox * 5, cudaMemcpyDeviceToHost);
 				is_non_empty_tri non_empty;
 
+				int count = 0;
 				for (int i = 0; i < param_->tot_vox * 5; i++)
 				{
 					if (!non_empty(tri_[i]))
-						break;
+						continue;
 					else
 					{
-						glBegin(GL_TRIANGLES);
 						for (int j = 0; j < 3; ++j)
 						{
-							glNormal3f(tri_[i].n[j].x, tri_[i].n[j].y, tri_[i].n[j].z);
-							glVertex3f(tri_[i].v[j].x, tri_[i].v[j].y, tri_[i].v[j].z);
+							vec_n_[count] = tri_[i].n[j].x;
+							vec_n_[count + 1] = tri_[i].n[j].y;
+							vec_n_[count + 2] = tri_[i].n[j].z;
+							vec_p_[count] = tri_[i].v[j].x;
+							vec_p_[count + 1] = tri_[i].v[j].y;
+							vec_p_[count + 2] = tri_[i].v[j].z;
+							count += 3;
 						}
-						glEnd();
 					}
 				}
+
+				glBindBuffer(GL_ARRAY_BUFFER, p_vbo_);
+				glBufferData(GL_ARRAY_BUFFER, count * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+				glBufferSubData(GL_ARRAY_BUFFER, 0, count * sizeof(GLfloat), &vec_p_[0]);
+
+				glBindBuffer(GL_ARRAY_BUFFER, n_vbo_);
+				glBufferData(GL_ARRAY_BUFFER, count * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+				glBufferSubData(GL_ARRAY_BUFFER, 0, count * sizeof(GLfloat), &vec_n_[0]);
+
+				glBindVertexArray(vao_);
+				glDrawArrays(GL_TRIANGLES, 0, count);
 			}
 			else if (rm == RenderMode::SCALAR)
 			{
@@ -389,7 +433,7 @@ namespace FluidSim {
 					if (non_zero(normal_[i]))
 					{
 						auto tmp = (normal_[i] + 1.f) / 2.f;
-						glColor3f(tmp.x,tmp.y,tmp.z);
+						glColor3f(tmp.x, tmp.y, tmp.z);
 						glVertex3f(pos_[i].x*param_->sim_ratio.x + param_->origin.x,
 							pos_[i].y*param_->sim_ratio.y + param_->origin.y,
 							pos_[i].z*param_->sim_ratio.z + param_->origin.z);

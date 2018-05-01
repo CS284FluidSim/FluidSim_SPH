@@ -13,6 +13,15 @@
     <ClCompile Include="D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Ironman\FluidSim_SPH\src\fluidsim_shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Ironman\FluidSim_SPH\common\maths_funcs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Ironman\FluidSim_SPH\common\obj_parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D:\Ironman\FluidSim_SPH\common\stb_image.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -27,7 +36,7 @@
     <ClInclude Include="D:\Ironman\FluidSim_SPH\include\fluidsim_gl_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D:\Ironman\FluidSim_SPH\common\stb_image.h">
+    <ClInclude Include="D:\Ironman\FluidSim_SPH\include\fluidsim_shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

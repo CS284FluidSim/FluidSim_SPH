@@ -168,6 +168,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{3371EC0B-5D7E-3A14-BAAE-831CADDA9929}</Project>
       <Name>dambreak_cuda</Name>
     </ProjectReference>
+    <ProjectReference Include="D:\Ironman\FluidSim_SPH\build_gpu\dambreak_cuda_glfw.vcxproj">
+      <Project>{629BFA40-243E-3B5B-8A82-04C15F580961}</Project>
+      <Name>dambreak_cuda_glfw</Name>
+    </ProjectReference>
     <ProjectReference Include="D:\Ironman\FluidSim_SPH\build_gpu\fluidsim_sph_gpu.vcxproj">
       <Project>{D5C6A33E-A270-34DE-BAC9-D99C2300A2C4}</Project>
       <Name>fluidsim_sph_gpu</Name>

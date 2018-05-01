@@ -230,6 +230,8 @@ namespace FluidSim {
 			sys_param_->h = h;
 			sys_param_->mass = mass;
 
+			sys_param_->sim_ratio = sim_ratio;
+			sys_param_->sim_origin = world_origin;
 			sys_param_->world_size = world_size;
 			sys_param_->cell_size = sys_param_->h;
 			sys_param_->grid_size.x = (int)ceil(sys_param_->world_size.x / sys_param_->cell_size);
@@ -275,7 +277,30 @@ namespace FluidSim {
 			uint3 dim_vox = make_uint3(ceil(world_size.x / vox_size),
 				ceil(world_size.y / vox_size),
 				ceil(world_size.z / vox_size));
-			marchingCube_ = new MarchingCube(dim_vox, sim_ratio, world_origin, vox_size, sys_param_->rest_dens);
+			marchingCube_ = new MarchingCube(dim_vox, sim_ratio, world_origin, vox_size, sys_param_->rest_dens, sys_param_->max_particles);
+
+			//Init GL
+			glGenVertexArrays(1, &vao_);
+			glBindVertexArray(vao_);
+
+			glGenBuffers(1, &p_vbo_);
+			glBindBuffer(GL_ARRAY_BUFFER, p_vbo_);
+			vec_p_ = std::vector<float>(max_particles * 3, 0.f);
+			glBufferData(GL_ARRAY_BUFFER, 3 * max_particles * sizeof(GLfloat), &vec_p_[0], GL_DYNAMIC_DRAW);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			glEnableVertexAttribArray(0);
+
+			glGenBuffers(1, &c_vbo_);
+			glBindBuffer(GL_ARRAY_BUFFER, c_vbo_);
+			vec_c_ = std::vector<float>(max_particles * 3, 0.f);
+			glBufferData(GL_ARRAY_BUFFER, 3 * max_particles * sizeof(GLfloat), &vec_c_[0], GL_DYNAMIC_DRAW);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+			glEnableVertexAttribArray(1);
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glDisableVertexAttribArray(0);
+			glDisableVertexAttribArray(1);
 		}
 
 		__host__
@@ -331,14 +356,15 @@ namespace FluidSim {
 		}
 
 		__host__
-			void SimulateSystem::add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max)
+			void SimulateSystem::add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max, float3 velocity)
 		{
 			float3 pos;
 			float3 vel;
 
-			vel.x = 0.f;
+			/*vel.x = 0.f;
 			vel.y = 0.f;
-			vel.z = 0.f;
+			vel.z = 0.f;*/
+			vel = velocity;
 
 			for (pos.x = sys_param_->world_size.x*cube_pos_min.x; pos.x < sys_param_->world_size.x*cube_pos_max.x; pos.x += (sys_param_->h*0.5f))
 			{
@@ -350,6 +376,9 @@ namespace FluidSim {
 					}
 				}
 			}
+			cudaMemcpy(dev_particles_, particles_, sys_param_->num_particles * sizeof(Particle), cudaMemcpyHostToDevice);
+			cudaMemcpy(dev_sys_param_, sys_param_, sizeof(SysParam), cudaMemcpyHostToDevice);
+			marchingCube_->init(sys_param_->num_particles);
 		}
 
 		__host__
@@ -442,7 +471,8 @@ namespace FluidSim {
 			}
 		}
 
-		void SimulateSystem::add_static_object(const float3 & cube_pos_min, const float3 & cube_pos_max)
+		__host__
+		void SimulateSystem::add_static_object(Cube *cube)
 		{
 			if (is_running())
 			{
@@ -451,22 +481,72 @@ namespace FluidSim {
 			}
 
 			float3 pos;
+			float3 cube_pos = make_float3(cube->get_position().v[0], cube->get_position().v[1], cube->get_position().v[2]);
+			float3 cube_side = make_float3(cube->get_side().v[0], cube->get_side().v[1], cube->get_side().v[2]);
+
 			int count = 0;
-			for (pos.x = sys_param_->world_size.x*cube_pos_min.x; pos.x < sys_param_->world_size.x*cube_pos_max.x; pos.x += sys_param_->cell_size)
+			for (pos.x = cube_pos.x-cube_side.x/2.f; pos.x < cube_pos.x + cube_side.x / 2.f; pos.x += sys_param_->cell_size*0.5f)
 			{
-				for (pos.y = sys_param_->world_size.y*cube_pos_min.y; pos.y < sys_param_->world_size.y*cube_pos_max.y; pos.y += sys_param_->cell_size)
+				for (pos.y = cube_pos.y - cube_side.y / 2.f; pos.y < cube_pos.y + cube_side.y / 2.f; pos.y += sys_param_->cell_size*0.5f)
 				{
-					for (pos.z = sys_param_->world_size.z*cube_pos_min.z; pos.z < sys_param_->world_size.z*cube_pos_max.z; pos.z += sys_param_->cell_size)
+					for (pos.z = cube_pos.z - cube_side.z / 2.f; pos.z < cube_pos.z + cube_side.z / 2.f; pos.z += sys_param_->cell_size*0.5f)
 					{
 						int3 cell_pos = calc_cell_pos(pos, sys_param_->cell_size);
 						int index = cell_pos.z*sys_param_->grid_size.x*sys_param_->grid_size.y + cell_pos.y*sys_param_->grid_size.x + cell_pos.x;
 						occupied_[index] = 1;
+						count++;
 					}
 				}
 			}
-			SceneObject *obj = new Cube({ 0.f,0.f,0.f }, { 1.f,1.f,1.f });
-			scene_objects.push_back(obj);
+
+			scene_objects.push_back(cube);
 			cudaMemcpy(dev_occupied_, occupied_, sizeof(int)*sys_param_->total_cells, cudaMemcpyHostToDevice);
+		}
+
+		__host__
+		void SimulateSystem::add_static_object(Sphere * sphere)
+		{
+			float3 pos;
+
+			float3 sphere_pos = make_float3(sphere->get_position().v[0], sphere->get_position().v[1], sphere->get_position().v[2]);
+			float radius = sphere->get_radius();
+
+			// calculate the bounding box of sphere
+			float3 pos_min = sphere_pos - make_float3(radius, radius, radius);
+			float3 pos_max = sphere_pos + make_float3(radius, radius, radius);
+
+			if (pos_min.x < 0.f || pos_min.y < 0.f || pos_min.z < 0.f)
+			{
+				std::cout << "Out of bottom limit" << std::endl;
+			}
+			if (pos_max.x > sys_param_->world_size.x || pos_max.y > sys_param_->world_size.y || pos_max.z > sys_param_->world_size.z)
+			{
+				std::cout << "Out of top limit" << std::endl;
+			}
+
+			for (pos.x = pos_min.x; pos.x <= pos_max.x; pos.x += sys_param_->cell_size*0.5f)
+			{
+				for (pos.y = pos_min.y; pos.y <= pos_max.y; pos.y += sys_param_->cell_size*0.5f)
+				{
+					for (pos.z = pos_min.z; pos.z <= pos_max.z; pos.z += sys_param_->cell_size*0.5f)
+					{
+						if (length(pos - sphere_pos) <= radius)
+						{
+							int3 cell_pos = calc_cell_pos(pos, sys_param_->cell_size);
+							int index = cell_pos.z*sys_param_->grid_size.x*sys_param_->grid_size.y + cell_pos.y*sys_param_->grid_size.x + cell_pos.x;
+							occupied_[index] = 1;
+						}
+					}
+				}
+			}
+
+			scene_objects.push_back(sphere);
+			cudaMemcpy(dev_occupied_, occupied_, sizeof(int)*sys_param_->total_cells, cudaMemcpyHostToDevice);
+		}
+
+		void SimulateSystem::add_static_object(Model *model)
+		{
+			scene_objects.push_back(model);
 		}
 
 		__host__
@@ -504,14 +584,40 @@ namespace FluidSim {
 
 			cudaMemcpy(particles_, dev_particles_, sizeof(Particle)*sys_param_->num_particles, cudaMemcpyDeviceToHost);
 		}
-		
-		__host__
-			void SimulateSystem::render(MarchingCube::RenderMode rm)
+
+		void SimulateSystem::render_particles()
 		{
-			//render static scene objects
+			for (int i = 0; i < sys_param_->num_particles; ++i)
+			{
+				vec_p_[3 * i] = particles_[i].pos.x;
+				vec_p_[3 * i + 1] = particles_[i].pos.y;
+				vec_p_[3 * i + 2] = particles_[i].pos.z;
+				vec_c_[3 * i] = 0.2;
+				vec_c_[3 * i + 1] = particles_[i].dens / 5000.f;
+				vec_c_[3 * i + 2] = 0.3;
+			}
+			glBindBuffer(GL_ARRAY_BUFFER, p_vbo_);
+			glBufferData(GL_ARRAY_BUFFER, 3 * sys_param_->max_particles * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+			glBufferSubData(GL_ARRAY_BUFFER, 0, 3 * sys_param_->num_particles * sizeof(GLfloat), &vec_p_[0]);
+
+			glBindBuffer(GL_ARRAY_BUFFER, c_vbo_);
+			glBufferData(GL_ARRAY_BUFFER, 3 * sys_param_->max_particles * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+			glBufferSubData(GL_ARRAY_BUFFER, 0, 3 * sys_param_->num_particles * sizeof(GLfloat), &vec_c_[0]);
+
+			glBindVertexArray(vao_);
+			glDrawArrays(GL_POINTS, 0, 3 * sys_param_->num_particles);
+		}
+
+		void SimulateSystem::render_static_object()
+		{
 			for (auto obj : scene_objects)
 				obj->render();
-			//render fluid mesh
+		}
+		
+		__host__
+			void SimulateSystem::render_surface(MarchingCube::RenderMode rm)
+		{
+			//render fluid surface
 			marchingCube_->render(rm);
 		}
 

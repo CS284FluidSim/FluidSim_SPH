@@ -1,32 +1,63 @@
-#ifndef _FLUIDSIM_GL_UTILS_H_
-#define _FLUIDSIM_GL_UTILS_H_
+/******************************************************************************\
+| OpenGL 4 Example Code.                                                       |
+| Accompanies written series "Anton's OpenGL 4 Tutorials"                      |
+| Email: anton at antongerdelan dot net                                        |
+| First version 27 Jan 2014                                                    |
+| Copyright Dr Anton Gerdelan, Trinity College Dublin, Ireland.                |
+| See individual libraries separate legal notices                              |
+|******************************************************************************|
+| This is just a file holding some commonly-used "utility" functions to keep   |
+| the main file a bit easier to read. You can might build up something like    |
+| this as you learn more GL. Note that you don't need much code here to do     |
+| good GL. If you have a big object-oriented engine then maybe you can ask     |
+| yourself if  it is really making life easier.                                |
+\******************************************************************************/
+#ifndef _GL_UTILS_H_
+#define _GL_UTILS_H_
 
-#include <GL/glew.h>
+#include <GL/glew.h>		 // include GLEW and new version of GL on Windows
 #include <GL/freeglut.h>
-
+#include <GLFW/glfw3.h>
+#include <stdarg.h>			// used by log functions to have variable number of args
 #include <string>
 
-using namespace std;
+/*------------------------------GLOBAL VARIABLES------------------------------*/
+extern int g_gl_width;
+extern int g_gl_height;
+extern GLFWwindow *g_window;
+/*--------------------------------LOG FUNCTIONS-------------------------------*/
+bool restart_gl_log();
+bool gl_log(const char *message, ...);
+/* same as gl_log except also prints to stderr */
+bool gl_log_err(const char *message, ...);
+/*--------------------------------GLFW3 and GLEW------------------------------*/
+bool start_gl();
+void glfw_error_callback(int error, const char *description);
+void glfw_framebuffer_size_callback(GLFWwindow *window, int width, int height);
+void _update_fps_counter(GLFWwindow *window);
+/*-----------------------------------SHADERS----------------------------------*/
+//bool parse_file_into_str(const char *file_name, char *shader_str, int max_len);
+//void print_program_info_log(GLuint sp);
+//void print_shader_info_log(GLuint shader_index);
+//bool create_shader(const char *file_name, GLuint *shader, GLenum type);
+//bool is_program_valid(GLuint sp);
+//bool create_program(GLuint vert, GLuint frag, GLuint *programme);
+///* just use this func to create most shaders; give it vertex and frag files */
+//GLuint create_program_from_files(const char *vert_file_name,
+//	const char *frag_file_name);
+/*----------------------------------TEXTURES----------------------------------*/
+bool load_texture(const char *file_name, GLuint *tex);
 
-namespace FluidSim {
+/* big cube. returns Vertex Array Object */
+GLuint make_cube(float size);
 
-	GLuint create_shader_program(string vs_path, string fs_path);
+GLuint make_triangle();
 
-	GLuint create_cube_vao(int size);
+/* use stb_image to load an image file into memory, and then into one side of
+a cube-map texture. */
+bool load_cube_map_side(GLuint texture, GLenum side_target, const char *file_name);
 
-	bool load_cube_map_side(GLuint texture, GLenum side_target, const char *file_name);
-
-	GLuint create_cube_map_tex(const char *front, const char *back, const char *top,
-		const char *bottom, const char *left, const char *right);
-
-	class Camera
-	{
-	private:
-
-	public:
-		Camera();
-	};
-
-}
-
+/* load all 6 sides of the cube-map from images, then apply formatting to the
+final texture */
+void create_cube_map(std::string base_path, GLuint *tex_cube);
 #endif
