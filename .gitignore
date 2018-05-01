@@ -36,3 +36,4 @@
 build/
 cmake-build-debug/
 build_cpu/
+build_gpu/

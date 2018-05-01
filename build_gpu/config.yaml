@@ -4,7 +4,7 @@
 world_size.x: 2.56
 world_size.y: 1.28
 world_size.z: 1.28
-max_particles: 250000
+max_particles: 550000
 
 #sph parameters
 h: 0.04

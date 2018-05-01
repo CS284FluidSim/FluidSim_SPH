@@ -29,19 +29,21 @@ D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(930): warning : variable 
   
   fluidsim_pci_system.cu
 D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(422): warning C4244: 'argument': conversion from 'float' to 'unsigned int', possible loss of data
-  fluidsim_gl_utils.cpp
-D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(103): warning C4477: 'fprintf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'std::string'
-D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(108): warning C4477: 'fprintf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'std::string'
-D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(143): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(207): note: see declaration of 'fopen'
-D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(150): warning C4996: 'ctime': This function or variable may be unsafe. Consider using ctime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\time.h(475): note: see declaration of 'ctime'
-D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(158): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(207): note: see declaration of 'fopen'
-D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(174): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(207): note: see declaration of 'fopen'
-D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(264): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(1772): note: see declaration of 'sprintf'
+  fluidsim_scene_object.cpp
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(121): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(122): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(123): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(124): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(125): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(126): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(130): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(131): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(132): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(133): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(134): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(135): warning C4244: 'argument': conversion from 'double' to 'const float', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(167): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp(221): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
 fluidsim_gl_utils.obj : warning LNK4006: stbi_load already defined in stb_image.obj; second definition ignored
 fluidsim_gl_utils.obj : warning LNK4006: stbi_load_from_memory already defined in stb_image.obj; second definition ignored
 fluidsim_gl_utils.obj : warning LNK4006: stbi_load_from_callbacks already defined in stb_image.obj; second definition ignored
