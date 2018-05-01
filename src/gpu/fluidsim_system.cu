@@ -589,23 +589,65 @@ namespace FluidSim {
 			cudaMemcpy(particles_, dev_particles_, sizeof(Particle)*sys_param_->num_particles, cudaMemcpyDeviceToHost);
 		}
 
-		void SimulateSystem::render_particles()
+		void SimulateSystem::render_particles(RenderMode rm)
 		{
 			for (int i = 0; i < sys_param_->num_particles; ++i)
 			{
 				vec_p_[3 * i] = particles_[i].pos.x;
 				vec_p_[3 * i + 1] = particles_[i].pos.y;
 				vec_p_[3 * i + 2] = particles_[i].pos.z;
-				vec_c_[3 * i] = 0.2;
-				vec_c_[3 * i + 1] = particles_[i].dens / 5000.f;
-				vec_c_[3 * i + 2] = 0.3;
+			}
+			if(rm==RenderMode::DENS)
+			{
+				for (int i = 0; i < sys_param_->num_particles; ++i)
+				{
+					vec_c_[3 * i] = 0.2;
+					vec_c_[3 * i + 1] = 1 - particles_[i].dens / 3000.f;
+					vec_c_[3 * i + 2] = 0.3;
+				}
+			}
+			else if (rm == RenderMode::SURFACE)
+			{
+				for (int i = 0; i < sys_param_->num_particles; ++i)
+				{
+					if (particles_[i].surf_norm > sys_param_->surf_norm)
+					{
+						vec_c_[3 * i] = 0.72;
+						vec_c_[3 * i + 1] = 0.25;
+						vec_c_[3 * i + 2] = 0.15;
+					}
+					else
+					{
+						vec_c_[3 * i] = 0.23;
+						vec_c_[3 * i + 1] = 0.35;
+						vec_c_[3 * i + 2] = 0.87;
+					}	
+				}
+			}
+			else if (rm == RenderMode::PRESS)
+			{
+				for (int i = 0; i < sys_param_->num_particles; ++i)
+				{
+					vec_c_[3 * i] = 0.2;
+					vec_c_[3 * i + 1] = 0.3;
+					vec_c_[3 * i + 2] = particles_[i].pres/3000.f;
+				}
+			}
+			else if (rm == RenderMode::FORCE)
+			{
+				for (int i = 0; i < sys_param_->num_particles; ++i)
+				{
+					vec_c_[3 * i] = particles_[i].force.x;
+					vec_c_[3 * i + 1] = particles_[i].force.y;
+					vec_c_[3 * i + 2] = particles_[i].force.z;
+				}
 			}
 			glBindBuffer(GL_ARRAY_BUFFER, p_vbo_);
-			glBufferData(GL_ARRAY_BUFFER, 3 * sys_param_->max_particles * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+			glBufferData(GL_ARRAY_BUFFER, 3 * sys_param_->num_particles * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
 			glBufferSubData(GL_ARRAY_BUFFER, 0, 3 * sys_param_->num_particles * sizeof(GLfloat), &vec_p_[0]);
 
 			glBindBuffer(GL_ARRAY_BUFFER, c_vbo_);
-			glBufferData(GL_ARRAY_BUFFER, 3 * sys_param_->max_particles * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
+			glBufferData(GL_ARRAY_BUFFER, 3 * sys_param_->num_particles * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW); // Buffer orphaning, a common way to improve streaming perf. See above link for details.
 			glBufferSubData(GL_ARRAY_BUFFER, 0, 3 * sys_param_->num_particles * sizeof(GLfloat), &vec_c_[0]);
 
 			glBindVertexArray(vao_);

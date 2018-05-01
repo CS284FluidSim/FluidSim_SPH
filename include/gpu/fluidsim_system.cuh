@@ -80,6 +80,11 @@ namespace FluidSim {
 
 		class SimulateSystem {
 		public:
+			enum RenderMode
+			{
+				SURFACE, DENS, PRESS, FORCE
+			};
+		public:
 			__host__
 				SimulateSystem();
 			__host__
@@ -105,9 +110,14 @@ namespace FluidSim {
 			__host__
 				void start();
 			__host__
+				void reset()
+			{
+				sys_param_->num_particles = 0;
+			}
+			__host__
 				virtual void animation();
 			__host__
-				void render_particles();
+				void render_particles(RenderMode rm=RenderMode::DENS);
 			__host__
 				void render_surface(MarchingCube::RenderMode rm);
 			__host__

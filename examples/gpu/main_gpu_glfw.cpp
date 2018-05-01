@@ -35,11 +35,18 @@ GLFWwindow *g_window = NULL;
 
 // render mode
 int render_mode = 0;
+bool render_mesh = false;
+bool pause = false;
+bool step = false;
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 		simsystem->add_fluid(make_float3(0.45f, 0.8f, 0.45f), make_float3(0.55f, 1.0f, 0.55f), make_float3(0.0f, -2.0f, 0.0f));
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+		render_mesh = !render_mesh;
+	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS)
+		render_mode = (render_mode + 1) % 4;
 }
 
 void init_sph_system(std::string config_path)
@@ -208,6 +215,7 @@ int main() {
 	refract_shader.add_uniform("P");
 
 	particle_shader.create("../shader/particle_vs.glsl", "../shader/particle_fs.glsl");
+	particle_shader.add_uniform("M");
 	particle_shader.add_uniform("V");
 	particle_shader.add_uniform("P");
 
@@ -257,6 +265,7 @@ int main() {
 	skybox_shader.set_uniform_matrix4fv("V", R.m);
 	skybox_shader.set_uniform_matrix4fv("P", proj_mat.m);
 
+	particle_shader.set_uniform_matrix4fv("M", model_mat.m);
 	particle_shader.set_uniform_matrix4fv("V", view_mat.m);
 	particle_shader.set_uniform_matrix4fv("P", proj_mat.m);
 
@@ -290,14 +299,22 @@ int main() {
 		// run simulation
 		if (simsystem->is_running())
 		{
-			
-			simsystem->animation();
-			//diffuse_shader.use();
-			//diffuse_shader.set_uniform_matrix4fv("M", model_mat.m);
-			//simsystem->render_particles();
-			water_shader.use();
-			water_shader.set_uniform_matrix4fv("M", model_mat.m);
-			simsystem->render_surface(FluidSim::gpu::MarchingCube::RenderMode::TRI);
+			if (!pause||step)
+			{
+				simsystem->animation();
+				step = !step;
+			}
+			if (!render_mesh)
+			{
+				glPointSize(6.f);
+				particle_shader.use();
+				simsystem->render_particles((FluidSim::gpu::SimulateSystem::RenderMode)render_mode);
+			}
+			else
+			{
+				water_shader.use();
+				simsystem->render_surface(FluidSim::gpu::MarchingCube::RenderMode::TRI);
+			}
 			simsystem->render_static_object();
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_texture);
@@ -388,11 +405,15 @@ int main() {
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_P))
 		{
-
+			pause = !pause;
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_N))
+		{
+			step = !step;
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_R))
 		{
-
+			simsystem->reset();
 		}
 		// update view matrix
 		if (cam_moved) {
@@ -427,7 +448,7 @@ int main() {
 			skybox_shader.set_uniform_matrix4fv("P", proj_mat.m);
 
 			particle_shader.set_uniform_matrix4fv("V", view_mat.m);
-			particle_shader.set_uniform_matrix4fv("V", proj_mat.m);
+			particle_shader.set_uniform_matrix4fv("P", proj_mat.m);
 		}
 
 		water_shader.set_uniform_matrix4fv("P", proj_mat.m);
