@@ -21,11 +21,20 @@ FluidSim::Shader skybox_shader;
 FluidSim::Shader texcube_shader;
 FluidSim::Shader diffuse_shader;
 FluidSim::Shader particle_shader;
+FluidSim::Shader refract_shader;
+
+// camera matrices. it's easier if they are global
+mat4 view_mat;
+mat4 proj_mat;
+vec3 cam_pos(1.0f, 2.0f, 3.0f);
 
 // keep track of window size for things like the viewport and the mouse cursor
 int g_gl_width = 1600;
 int g_gl_height = 1600;
 GLFWwindow *g_window = NULL;
+
+// render mode
+int render_mode = 0;
 
 void init_sph_system(std::string config_path)
 {
@@ -46,7 +55,9 @@ void init_sph_system(std::string config_path)
 		fs["world_size.y"] >> world_size.y;
 		fs["world_size.z"] >> world_size.z;
 		real_world_side = { world_size.x * 1.0f, world_size.y * 1.0f, world_size.z * 1.0f };
-		//real_world_origin = { -real_world_side.x / 2.f, -real_world_side.y / 2.f, -real_world_side.z / 2.f };
+		cam_pos.v[0] = world_size.x / 2;
+		cam_pos.v[1] = world_size.y;
+		cam_pos.v[2] = world_size.z * 4;
 		real_world_origin = { 0.f,0.f,0.f };
 		sim_ratio = real_world_side / world_size;
 
@@ -114,23 +125,37 @@ void init_sph_system(std::string config_path)
 		//FluidSim::Sphere *sphere = new FluidSim::Sphere({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 0.2f*world_size.z);
 		//sphere->set_shader(&diffuse_shader);
 		// texture cube
+		//GLuint box_texture;
 		GLuint box_texture;
 		create_cube_map("../texture/cube/wood/", &box_texture);
+		GLuint frame_texture;
+		create_cube_map("../texture/cube/frame/", &frame_texture);
 		FluidSim::TexturedCube *tex_cube = new FluidSim::TexturedCube({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z },
 		{ 0.2f*world_size.x,0.4f*world_size.y,0.5f*world_size.z }, box_texture);
 		tex_cube->set_shader(&texcube_shader);
+		FluidSim::TexturedCube *bottomwall = new FluidSim::TexturedCube({ 0.5f*world_size.x,0.f,0.5f*world_size.z},
+		{ world_size.x, 0.01f, world_size.z}, frame_texture);
+		bottomwall->set_shader(&texcube_shader);
+		FluidSim::TexturedCube *backwall = new FluidSim::TexturedCube({ 0.5f*world_size.x,0.5f*world_size.y,0.f},
+		{ world_size.x, world_size.y, 0.01f }, frame_texture);
+		backwall->set_shader(&texcube_shader);
+		FluidSim::TexturedCube *leftwall = new FluidSim::TexturedCube({ 0.f,0.5f*world_size.y,0.5f*world_size.z },
+		{ 0.01f, world_size.y, world_size.z }, frame_texture);
+		leftwall->set_shader(&texcube_shader);
+		FluidSim::TexturedCube *rightwall = new FluidSim::TexturedCube({ world_size.x,0.5f*world_size.y,0.5f*world_size.z },
+		{ 0.01f, world_size.y, world_size.z }, frame_texture);
+		rightwall->set_shader(&texcube_shader);
 		//Model *model = new Model("../scene/bunny.txt", { 0.5f*world_size.x,0.5f*world_size.y,0.5f*world_size.z }, 0.1f);
 		//simsystem->add_static_object(cube);
 		//simsystem->add_static_object(cube);
 		//simsystem->add_static_object(cube1);
 		simsystem->add_static_object(tex_cube);
+		simsystem->add_static_object(bottomwall, false);
+		simsystem->add_static_object(backwall, false);
+		simsystem->add_static_object(leftwall, false);
+		simsystem->add_static_object(rightwall, false);
 	}
 }
-
-// camera matrices. it's easier if they are global
-mat4 view_mat;
-mat4 proj_mat;
-vec3 cam_pos(1.0f, 2.0f, 3.0f);
 
 int main() {
 	/*--------------------------------START
@@ -168,6 +193,11 @@ int main() {
 	texcube_shader.add_uniform("M");
 	texcube_shader.add_uniform("V");
 	texcube_shader.add_uniform("P");
+
+	refract_shader.create("../shader/refract_vs.glsl", "../shader/refract_fs.glsl");
+	refract_shader.add_uniform("M");
+	refract_shader.add_uniform("V");
+	refract_shader.add_uniform("P");
 
 	particle_shader.create("../shader/particle_vs.glsl", "../shader/particle_fs.glsl");
 	particle_shader.add_uniform("V");
@@ -212,6 +242,10 @@ int main() {
 	texcube_shader.set_uniform_matrix4fv("V", view_mat.m);
 	texcube_shader.set_uniform_matrix4fv("P", proj_mat.m);
 
+	refract_shader.set_uniform_matrix4fv("M", model_mat.m);
+	refract_shader.set_uniform_matrix4fv("V", view_mat.m);
+	refract_shader.set_uniform_matrix4fv("P", proj_mat.m);
+
 	skybox_shader.set_uniform_matrix4fv("V", R.m);
 	skybox_shader.set_uniform_matrix4fv("P", proj_mat.m);
 
@@ -220,6 +254,8 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST); // enable depth-testing
 	glDepthFunc(GL_LESS);		 // depth-testing interprets a smaller value as "closer"
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glClearColor(0.2, 0.2, 0.2, 1.0); // grey background to help spot mistakes
 	glViewport(0, 0, g_gl_width, g_gl_height);
 
@@ -236,6 +272,13 @@ int main() {
 		// wipe the drawing surface clear
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// render skybox
+		skybox_shader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_texture);
+		glBindVertexArray(cube_vao);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
 		// run simulation
 		if (simsystem->is_running())
 		{
@@ -251,29 +294,6 @@ int main() {
 			simsystem->render_surface(FluidSim::gpu::MarchingCube::RenderMode::TRI);
 		}
 
-		// render skybox
-		skybox_shader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_texture);
-		glBindVertexArray(cube_vao);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		//glBindVertexArray(cube_1_vao);
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		// render a sky-box using the cube-map texture
-		//glDepthMask(GL_FALSE);
-		//glUseProgram(cube_sp);
-		//glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_texture);
-		//glBindVertexArray(cube_vao);
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
-		//glDepthMask(GL_TRUE);
-
-		//glUseProgram(monkey_sp);
-		//glBindVertexArray(vao);
-		//glUniformMatrix4fv(monkey_M_location, 1, GL_FALSE, model_mat.m);
-		//glDrawArrays(GL_TRIANGLES, 0, g_point_count);
 		// update other events like input handling
 		glfwPollEvents();
 
@@ -348,6 +368,14 @@ int main() {
 		if (glfwGetKey(g_window, GLFW_KEY_SPACE)){
 			simsystem->start();
 		}
+		if (glfwGetKey(g_window, GLFW_KEY_P))
+		{
+
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_R))
+		{
+
+		}
 		// update view matrix
 		if (cam_moved) {
 			cam_heading += cam_yaw;
@@ -374,6 +402,9 @@ int main() {
 			texcube_shader.set_uniform_matrix4fv("V", view_mat.m);
 			texcube_shader.set_uniform_matrix4fv("P", proj_mat.m);
 
+			refract_shader.set_uniform_matrix4fv("V", view_mat.m);
+			refract_shader.set_uniform_matrix4fv("P", proj_mat.m);
+
 			skybox_shader.set_uniform_matrix4fv("V", inverse(R).m);
 			skybox_shader.set_uniform_matrix4fv("P", proj_mat.m);
 
@@ -385,6 +416,7 @@ int main() {
 		diffuse_shader.set_uniform_matrix4fv("P", proj_mat.m);
 		texcube_shader.set_uniform_matrix4fv("P", proj_mat.m);
 		skybox_shader.set_uniform_matrix4fv("P", proj_mat.m);
+		refract_shader.set_uniform_matrix4fv("P", proj_mat.m);
 		particle_shader.set_uniform_matrix4fv("P", proj_mat.m);
 
 		if (GLFW_PRESS == glfwGetKey(g_window, GLFW_KEY_ESCAPE)) {

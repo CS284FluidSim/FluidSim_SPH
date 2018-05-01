@@ -1,7 +1,7 @@
 #version 410
 
 const vec3 I_l = vec3(0.3,0.3,0.3);
-const vec3 I_a = vec3(1.0,1.0,1.0);
+const vec3 I_a = vec3(0.0,0.2,0.3);
 
 uniform samplerCube cube_texture;
 uniform mat4 V; // view matrix
