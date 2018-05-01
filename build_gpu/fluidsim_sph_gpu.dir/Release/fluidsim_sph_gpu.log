@@ -1,14 +1,47 @@
 ﻿  Building NVCC (Device) object CMakeFiles/fluidsim_sph_gpu.dir/src/gpu/Release/fluidsim_sph_gpu_generated_fluidsim_system.cu.obj
   fluidsim_system.cu
-D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(792): warning : variable "rel_vel" was declared but never referenced
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(796): warning : variable "rel_vel" was declared but never referenced
   
-D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(792): warning : variable "rel_vel" was declared but never referenced
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(796): warning : variable "rel_vel" was declared but never referenced
   
   fluidsim_system.cu
 D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(277): warning C4244: 'argument': conversion from 'float' to 'unsigned int', possible loss of data
-D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(601): warning C4018: '<': signed/unsigned mismatch
-D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(606): warning C4305: '=': truncation from 'double' to 'float'
-D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(608): warning C4305: '=': truncation from 'double' to 'float'
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(605): warning C4018: '<': signed/unsigned mismatch
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(610): warning C4305: '=': truncation from 'double' to 'float'
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(612): warning C4305: '=': truncation from 'double' to 'float'
+  Building NVCC (Device) object CMakeFiles/fluidsim_sph_gpu.dir/src/gpu/Release/fluidsim_sph_gpu_generated_fluidsim_pci_system.cu.obj
+  fluidsim_pci_system.cu
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(695): warning : variable "f_pressure" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(698): warning : variable "rel_vel" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(925): warning : variable "vol" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(930): warning : variable "rel_vel" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(695): warning : variable "f_pressure" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(698): warning : variable "rel_vel" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(925): warning : variable "vol" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(930): warning : variable "rel_vel" was declared but never referenced
+  
+  fluidsim_pci_system.cu
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(422): warning C4244: 'argument': conversion from 'float' to 'unsigned int', possible loss of data
+  fluidsim_gl_utils.cpp
+D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(103): warning C4477: 'fprintf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'std::string'
+D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(108): warning C4477: 'fprintf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'std::string'
+D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(143): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(207): note: see declaration of 'fopen'
+D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(150): warning C4996: 'ctime': This function or variable may be unsafe. Consider using ctime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\time.h(475): note: see declaration of 'ctime'
+D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(158): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(207): note: see declaration of 'fopen'
+D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(174): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(207): note: see declaration of 'fopen'
+D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp(264): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(1772): note: see declaration of 'sprintf'
 fluidsim_gl_utils.obj : warning LNK4006: stbi_load already defined in stb_image.obj; second definition ignored
 fluidsim_gl_utils.obj : warning LNK4006: stbi_load_from_memory already defined in stb_image.obj; second definition ignored
 fluidsim_gl_utils.obj : warning LNK4006: stbi_load_from_callbacks already defined in stb_image.obj; second definition ignored

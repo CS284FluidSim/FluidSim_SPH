@@ -97,7 +97,7 @@ namespace FluidSim {
 			__host__
 				void add_fluid(const float3 &scale_const); // add object fluid
 			__host__
-				void add_static_object(Cube *cube);
+				void add_static_object(Cube *cube, bool isCollider = true);
 			__host__
 				void add_static_object(Sphere *sphere);
 			__host__

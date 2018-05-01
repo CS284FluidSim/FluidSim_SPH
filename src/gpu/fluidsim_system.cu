@@ -483,7 +483,7 @@ namespace FluidSim {
 		}
 
 		__host__
-		void SimulateSystem::add_static_object(Cube *cube)
+		void SimulateSystem::add_static_object(Cube *cube, bool isCollider)
 		{
 			if (is_running())
 			{
@@ -491,27 +491,31 @@ namespace FluidSim {
 				return;
 			}
 
-			float3 pos;
-			float3 cube_pos = make_float3(cube->get_position().v[0], cube->get_position().v[1], cube->get_position().v[2]);
-			float3 cube_side = make_float3(cube->get_side().v[0], cube->get_side().v[1], cube->get_side().v[2]);
-
-			int count = 0;
-			for (pos.x = cube_pos.x-cube_side.x/2.f; pos.x < cube_pos.x + cube_side.x / 2.f; pos.x += sys_param_->cell_size*0.5f)
+			if (isCollider)
 			{
-				for (pos.y = cube_pos.y - cube_side.y / 2.f; pos.y < cube_pos.y + cube_side.y / 2.f; pos.y += sys_param_->cell_size*0.5f)
+				float3 pos;
+				float3 cube_pos = make_float3(cube->get_position().v[0], cube->get_position().v[1], cube->get_position().v[2]);
+				float3 cube_side = make_float3(cube->get_side().v[0], cube->get_side().v[1], cube->get_side().v[2]);
+
+				int count = 0;
+				for (pos.x = cube_pos.x - cube_side.x / 2.f; pos.x < cube_pos.x + cube_side.x / 2.f; pos.x += sys_param_->cell_size*0.5f)
 				{
-					for (pos.z = cube_pos.z - cube_side.z / 2.f; pos.z < cube_pos.z + cube_side.z / 2.f; pos.z += sys_param_->cell_size*0.5f)
+					for (pos.y = cube_pos.y - cube_side.y / 2.f; pos.y < cube_pos.y + cube_side.y / 2.f; pos.y += sys_param_->cell_size*0.5f)
 					{
-						int3 cell_pos = calc_cell_pos(pos, sys_param_->cell_size);
-						int index = cell_pos.z*sys_param_->grid_size.x*sys_param_->grid_size.y + cell_pos.y*sys_param_->grid_size.x + cell_pos.x;
-						occupied_[index] = 1;
-						count++;
+						for (pos.z = cube_pos.z - cube_side.z / 2.f; pos.z < cube_pos.z + cube_side.z / 2.f; pos.z += sys_param_->cell_size*0.5f)
+						{
+							int3 cell_pos = calc_cell_pos(pos, sys_param_->cell_size);
+							int index = cell_pos.z*sys_param_->grid_size.x*sys_param_->grid_size.y + cell_pos.y*sys_param_->grid_size.x + cell_pos.x;
+							occupied_[index] = 1;
+							count++;
+						}
 					}
 				}
+
+				cudaMemcpy(dev_occupied_, occupied_, sizeof(int)*sys_param_->total_cells, cudaMemcpyHostToDevice);
 			}
 
 			scene_objects.push_back(cube);
-			cudaMemcpy(dev_occupied_, occupied_, sizeof(int)*sys_param_->total_cells, cudaMemcpyHostToDevice);
 		}
 
 		__host__

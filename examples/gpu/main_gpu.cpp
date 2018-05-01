@@ -216,12 +216,12 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_static_object({ 0.3f,0.0f,0.3f }, { 0.7f,0.7f,0.7f });
 
-		Cube *cube = new Cube({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 
-							  { 0.2f*world_size.x,0.4f*world_size.y,0.5f*world_size.z });
-		Sphere *sphere = new Sphere({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 0.4f);
-		//Model *model = new Model("../scene/bunny.txt", { 0.5f*world_size.x,0.5f*world_size.y,0.5f*world_size.z }, 0.1f);
-		//simsystem->add_static_object(cube);
-		simsystem->add_static_object(sphere);
+		//Cube *cube = new Cube({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 
+		//					  { 0.2f*world_size.x,0.4f*world_size.y,0.5f*world_size.z });
+		//Sphere *sphere = new Sphere({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 0.4f);
+		////Model *model = new Model("../scene/bunny.txt", { 0.5f*world_size.x,0.5f*world_size.y,0.5f*world_size.z }, 0.1f);
+		////simsystem->add_static_object(cube);
+		//simsystem->add_static_object(sphere);
 	}
 	else
 	{
@@ -247,22 +247,6 @@ void init()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslatef(0.0f, 0.0f, -3.0f);
-}
-
-void init_cube_map(string cube_path)
-{
-	vector<string> texture_path;
-	texture_path.push_back(cube_path + "/posx.jpg");
-	texture_path.push_back(cube_path + "/negx.jpg");
-	texture_path.push_back(cube_path + "/posy.jpg");
-	texture_path.push_back(cube_path + "/negy.jpg");
-	texture_path.push_back(cube_path + "/posz.jpg");
-	texture_path.push_back(cube_path + "/negz.jpg");
-
-	//skyboxVAO = create_cube_vao(10.f);
-	//cube_tex_id = create_cube_map_tex(texture_path[0].c_str(), texture_path[1].c_str(), 
-	//	texture_path[2].c_str(), texture_path[3].c_str(), 
-	//	texture_path[4].c_str(), texture_path[5].c_str());
 }
 
 void render_simulation()
@@ -515,7 +499,7 @@ void motion_func(int x, int y)
 
 int main(int argc, char **argv)
 {
-	if (argc != 3)
+	if (argc != 2)
 		exit(0);
 
 	glutInit(&argc, argv);
@@ -525,22 +509,11 @@ int main(int argc, char **argv)
 	(void)glutCreateWindow("GLUT Program");
 
 	init();
-	init_cube_map(argv[2]);
 	init_sph_system(argv[1]);
-
-	//phong_shader = create_shader_program("../shader/phong.vs", "../shader/phong.fs");
-	//particle_shader = create_shader_program("../shader/particle.vs", "../shader/particle.fs");
-	//skybox_shader = create_shader_program("../shader/skybox.vs", "../shader/skybox.fs");
 
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
 	glEnable(GL_POINT_SPRITE_ARB);
 	glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
-	//glDepthMask(GL_TRUE);
-	//glEnable(GL_DEPTH_TEST);	// enable depth-testing
-	//glDepthFunc(GL_LESS);		 // depth-testing interprets a smaller value as "closer"
-	//glEnable(GL_CULL_FACE);	// cull face
-	//glCullFace(GL_BACK);		 // cull back face
-	//glFrontFace(GL_CCW); // set counter-clock-wise vertex order to mean the front
 
 	glutDisplayFunc(display_func);
 	glutReshapeFunc(reshape_func);
