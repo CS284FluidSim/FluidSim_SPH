@@ -1,0 +1,33 @@
+﻿  Building NVCC (Device) object CMakeFiles/fluidsim_sph_gpu.dir/src/gpu/Release/fluidsim_sph_gpu_generated_fluidsim_system.cu.obj
+  fluidsim_system.cu
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(454): warning : variable "count" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(675): warning : variable "rel_vel" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(454): warning : variable "count" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(675): warning : variable "rel_vel" was declared but never referenced
+  
+  fluidsim_system.cu
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(275): warning C4244: 'argument': conversion from 'float' to 'unsigned int', possible loss of data
+  Building NVCC (Device) object CMakeFiles/fluidsim_sph_gpu.dir/src/gpu/Release/fluidsim_sph_gpu_generated_fluidsim_pci_system.cu.obj
+  fluidsim_pci_system.cu
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(695): warning : variable "f_pressure" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(698): warning : variable "rel_vel" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(925): warning : variable "vol" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(930): warning : variable "rel_vel" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(695): warning : variable "f_pressure" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(698): warning : variable "rel_vel" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(925): warning : variable "vol" was declared but never referenced
+  
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(930): warning : variable "rel_vel" was declared but never referenced
+  
+  fluidsim_pci_system.cu
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_pci_system.cu(422): warning C4244: 'argument': conversion from 'float' to 'unsigned int', possible loss of data
+  fluidsim_sph_gpu.vcxproj -> D:\Ironman\FluidSim_SPH\build_gpu\Release\fluidsim_sph_gpu.lib

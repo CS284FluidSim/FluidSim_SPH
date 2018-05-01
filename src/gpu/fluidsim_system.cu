@@ -713,5 +713,62 @@ namespace FluidSim {
 
 			return total_cell_force;
 		}
+
+		__host__
+			SimulateSystem::SimulateSystem()
+		{
+			sys_running_ = false;
+			sys_param_ = new SysParam();
+			sys_param_->num_particles = 0;
+
+			sys_param_->max_particles = 500000;
+			sys_param_->h = 0.04f;
+			sys_param_->mass = 0.02f;
+
+			sys_param_->world_size = make_float3(2.56f, 1.28f, 1.28f);
+			sys_param_->cell_size = sys_param_->h;
+			sys_param_->grid_size.x = (int)ceil(sys_param_->world_size.x / sys_param_->cell_size);
+			sys_param_->grid_size.y = (int)ceil(sys_param_->world_size.y / sys_param_->cell_size);
+			sys_param_->grid_size.z = (int)ceil(sys_param_->world_size.z / sys_param_->cell_size);
+			sys_param_->total_cells = sys_param_->grid_size.x*sys_param_->grid_size.y*sys_param_->grid_size.z;
+
+			sys_param_->gravity = make_float3(0.0f, -9.8f, 0.0f);
+			sys_param_->bound_damping = -1.0f;
+			sys_param_->rest_dens = 1000.0f;
+			sys_param_->gas_const = 1.0f;
+			sys_param_->visc = 6.5f;
+			sys_param_->timestep = 0.001f;
+			sys_param_->surf_norm = 6.0f;
+			sys_param_->surf_coef = 0.8f;
+
+			sys_param_->poly6 = 315.0f / (64.0f * PI * pow(sys_param_->h, 9));
+			sys_param_->grad_poly6 = -945 / (32 * PI * pow(sys_param_->h, 9));
+			sys_param_->lplc_poly6 = 945 / (8 * PI * pow(sys_param_->h, 9));
+
+			sys_param_->grad_spiky = -45.0f / (PI * pow(sys_param_->h, 6));
+			sys_param_->lplc_visco = 45.0f / (PI * pow(sys_param_->h, 6));
+
+			sys_param_->h2 = sys_param_->h*sys_param_->h;
+			sys_param_->self_lplc_color = sys_param_->lplc_poly6*sys_param_->mass*sys_param_->h2*(0 - 3.f / 4.f * sys_param_->h2);
+
+			cudaMalloc(&dev_sys_param_, sizeof(SysParam));
+
+			particles_ = (Particle *)malloc(sizeof(Particle)*sys_param_->max_particles);
+			occupied_ = (int *)malloc(sizeof(int)*sys_param_->total_cells);
+			memset(occupied_, 0, sizeof(int)*sys_param_->total_cells);
+			cudaMalloc(&dev_occupied_, sys_param_->total_cells * sizeof(int));
+			cudaMemset(dev_occupied_, 0, sizeof(int)*sys_param_->total_cells);
+			cudaMalloc(&dev_particles_, sys_param_->max_particles * sizeof(Particle));
+			cudaMalloc(&dev_hash_, sizeof(uint)*sys_param_->max_particles);
+			cudaMalloc(&dev_index_, sizeof(uint)*sys_param_->max_particles);
+			cudaMalloc(&dev_start_, sizeof(uint)*sys_param_->total_cells);
+			cudaMalloc(&dev_end_, sizeof(uint)*sys_param_->total_cells);
+		}
 	}
 }
+
+
+	
+
+
+	

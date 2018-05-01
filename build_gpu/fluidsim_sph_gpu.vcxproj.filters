@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\Ironman\FluidSim_SPH\src\fluidsim_marchingcube.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Ironman\FluidSim_SPH\src\fluidsim_timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Ironman\FluidSim_SPH\src\fluidsim_scene_object.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Ironman\FluidSim_SPH\src\fluidsim_gl_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Ironman\FluidSim_SPH\common\stb_image.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\Ironman\FluidSim_SPH\include\fluidsim_timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Ironman\FluidSim_SPH\include\fluidsim_scene_object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Ironman\FluidSim_SPH\include\fluidsim_gl_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Ironman\FluidSim_SPH\common\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Ironman\FluidSim_SPH\src\gpu\fluidsim_system.cu" />
+    <CustomBuild Include="D:\Ironman\FluidSim_SPH\src\gpu\fluidsim_pci_system.cu" />
+    <CustomBuild Include="D:\Ironman\FluidSim_SPH\src\gpu\fluidsim_marchingcube.cu" />
+    <CustomBuild Include="D:\Ironman\FluidSim_SPH\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Ironman\FluidSim_SPH\include\gpu\fluidsim_system.cuh" />
+    <None Include="D:\Ironman\FluidSim_SPH\include\gpu\fluidsim_pci_system.cuh" />
+    <None Include="D:\Ironman\FluidSim_SPH\include\gpu\fluidsim_particle.cuh" />
+    <None Include="D:\Ironman\FluidSim_SPH\include\gpu\fluidsim_pci_particle.cuh" />
+    <None Include="D:\Ironman\FluidSim_SPH\include\gpu\fluidsim_marchingcube.cuh" />
+    <None Include="D:\Ironman\FluidSim_SPH\include\gpu\fluidsim_marchingcube_param.cuh" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="D:\Ironman\FluidSim_SPH\build_gpu\CMakeFiles\fluidsim_sph_gpu.dir\src\gpu\$(Configuration)\fluidsim_sph_gpu_generated_fluidsim_system.cu.obj">
+      <Filter>Object Files</Filter>
+    </Object>
+    <Object Include="D:\Ironman\FluidSim_SPH\build_gpu\CMakeFiles\fluidsim_sph_gpu.dir\src\gpu\$(Configuration)\fluidsim_sph_gpu_generated_fluidsim_pci_system.cu.obj">
+      <Filter>Object Files</Filter>
+    </Object>
+    <Object Include="D:\Ironman\FluidSim_SPH\build_gpu\CMakeFiles\fluidsim_sph_gpu.dir\src\gpu\$(Configuration)\fluidsim_sph_gpu_generated_fluidsim_marchingcube.cu.obj">
+      <Filter>Object Files</Filter>
+    </Object>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{24E9D3C2-107B-38B6-9C94-D1CF6491CF6B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{1F2876F7-FC62-3E70-A2E1-FB940AA93141}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Object Files">
+      <UniqueIdentifier>{C20B794D-2B48-3E69-A451-818E9FABE085}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

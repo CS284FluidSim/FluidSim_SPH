@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "gpu/fluidsim_pci_system.cuh"
 
 
 #pragma comment(lib, "glew32.lib") 
@@ -22,6 +23,7 @@ using json = nlohmann::json;
 
 //Somulation system global variable
 FluidSim::gpu::SimulateSystem *simsystem;
+//FluidSim::gpu::SimulateSystemPCI *simsystem;
 FluidSim::Timer *timer;
 
 //OpenGL global variable
@@ -176,6 +178,9 @@ void init_sph_system(std::string config_path)
 		simsystem = new FluidSim::gpu::SimulateSystem(world_size, sim_ratio, real_world_origin, max_particles,
 			h, mass, gravity, bound_damping, rest_dens, gas_const, visc, timestep, surf_norm, surf_coef);
 
+		/*simsystem = new FluidSim::gpu::SimulateSystemPCI(world_size, sim_ratio, real_world_origin, max_particles,
+			h, mass, gravity, bound_damping, rest_dens, gas_const, visc, timestep, surf_norm, surf_coef);*/
+
 		float3 cube_min;
 		fs["cube_min.x"] >> cube_min.x;
 		fs["cube_min.y"] >> cube_min.y;
@@ -193,7 +198,7 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
 
-		simsystem->add_cube_fluid(make_float3(0.9f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
+		simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.7f, 1.0f), gap);
 
 		//simsystem->add_cube_fluid(make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f, 0.2f, 1.0f), gap);
 
@@ -205,11 +210,12 @@ void init_sph_system(std::string config_path)
 		
 		//simsystem->add_fluid(make_float3(1.5f, 1.5f, 1.5f));  // a bunny drop
 
-		simsystem->add_static_object({ 0.3f,0.0f,0.3f }, { 0.7f,0.7f,0.7f });
+		//simsystem->add_static_object({ 0.3f,0.0f,0.3f }, { 0.7f,0.7f,0.7f });
 	}
 	else
 	{
 		simsystem = new FluidSim::gpu::SimulateSystem(world_size, sim_ratio, real_world_origin);
+		//simsystem = new FluidSim::gpu::SimulateSystemPCI(world_size, sim_ratio, real_world_origin);
 		simsystem->add_cube_fluid(make_float3(0.7f, 0.0f, 0.0f), make_float3(1.0f, 0.4f, 1.0f), 0.5f);
 	}
 
@@ -265,6 +271,7 @@ void render_simulation()
 		float3 pos;
 
 		FluidSim::gpu::Particle *particles = simsystem->get_particles();
+		//FluidSim::gpu::ParticlePCI *particles = simsystem->get_particles();
 
 		for (unsigned int i = 0; i < simsystem->get_num_particles(); i++)
 		{
