@@ -98,7 +98,7 @@ namespace FluidSim {
 			__host__
 				void add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max, float3 velocity = {0.0f, 0.0f, 0.0f}); // add cude fluid
 			__host__
-				void add_fluid(const float3 &sphere_pos, const float &radius);  // add sphere fluid
+				void add_fluid(const float3 &sphere_pos, const float &radius, float3 velocity = { 0.0f, 0.0f, 0.0f });  // add sphere fluid
 			__host__
 				void add_fluid(const float3 &scale_const); // add object fluid
 			__host__
@@ -140,6 +140,11 @@ namespace FluidSim {
 			__host__
 				Particle *get_particles() {
 				return particles_;
+			}
+			__host__
+				void change_mass(float mass)
+			{
+				sys_param_->mass = mass;
 			}
 
 		protected:

@@ -33,16 +33,36 @@ int g_gl_width = 800;
 int g_gl_height = 800;
 GLFWwindow *g_window = NULL;
 
+
+int primitive_mode = 0;
+
 // render mode
 int render_mode = 0;
 bool render_mesh = false;
 bool pause = false;
 bool step = false;
 
+
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		simsystem->add_fluid(make_float3(0.45f, 0.8f, 0.45f), make_float3(0.55f, 1.0f, 0.55f), make_float3(0.0f, -2.0f, 0.0f));
+	{
+		if (primitive_mode == 0)
+		{
+			//simsystem->change_mass(0.01f);
+			simsystem->add_fluid(make_float3(0.45f, 0.8f, 0.45f), make_float3(0.55f, 1.0f, 0.55f), make_float3(0.0f, -2.0f, 0.0f));  // drop cube
+		}
+		else if (primitive_mode == 1)
+		{
+			//simsystem->change_mass(0.01f);
+			simsystem->add_fluid(make_float3(0.5f, 0.8f, 0.5f), 0.1f, make_float3(0.0f, -2.0f, 0.0f));  // drop sphere
+		}
+		else if (primitive_mode == 2)
+		{
+			//simsystem->change_mass(0.01f);
+			simsystem->add_fluid(make_float3(1.3f, 1.3f, 1.3f));  // a bunny drop
+		}
+	}
 	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
 		render_mesh = !render_mesh;
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS)
@@ -118,7 +138,7 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
 
-		//simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
+		simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
 
 		//simsystem->add_cube_fluid(make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f, 0.2f, 1.0f), gap);
 
@@ -126,9 +146,11 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_fluid(make_float3(0.5f, 0.7f, 0.5f), 0.3f);  // a sphere drop from the air
 
-		simsystem->add_fluid(make_float3(0.6f, 0.8f, 0.6f), make_float3(0.7f, 1.0f, 0.7f), make_float3(0.0f, -2.0f, 0.0f));
+		//simsystem->add_fluid(make_float3(0.6f, 0.8f, 0.6f), make_float3(0.7f, 1.0f, 0.7f), make_float3(0.0f, -2.0f, 0.0f));
 
-		//simsystem->add_fluid(make_float3(4.5f, 4.5f, 4.5f));  // a bunny drop
+		//simsystem->add_fluid(make_float3(0.5f, 0.8f, 0.5f), 0.1f, make_float3(0.0f, -2.0f, 0.0f));
+
+		//simsystem->add_fluid(make_float3(1.3f, 1.3f, 1.3f));  // a bunny drop
 
 		//simsystem->add_fluid(make_float3(1.5f, 1.5f, 1.5f));  // a bunny drop
 		//FluidSim::Cube *cube = new FluidSim::Cube({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z },
@@ -321,6 +343,16 @@ int main() {
 		}
 
 		glfwSetMouseButtonCallback(g_window, mouse_button_callback);
+
+		if (glfwGetKey(g_window, GLFW_KEY_0)) {
+			primitive_mode = 0;
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_1)) {
+			primitive_mode = 1;
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_2)) {
+			primitive_mode = 2;
+		}
 
 		// render skybox
 		skybox_shader.use();
