@@ -201,7 +201,7 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
 
-		simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
+		//simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
 
 
 		//simsystem->add_cube_fluid(make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f, 0.2f, 1.0f), gap);
@@ -212,7 +212,7 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_fluid(make_float3(4.5f, 4.5f, 4.5f));  // a bunny drop
 		
-		//simsystem->add_fluid(make_float3(1.5f, 1.5f, 1.5f));  // a bunny drop
+		simsystem->add_fluid(make_float3(1.0f, 1.0f, 1.0f));  // a bunny drop
 
 		//simsystem->add_static_object({ 0.3f,0.0f,0.3f }, { 0.7f,0.7f,0.7f });
 

@@ -27,10 +27,28 @@ int g_gl_width = 800;
 int g_gl_height = 800;
 GLFWwindow *g_window = NULL;
 
+int renderMode = 0;
+
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		simsystem->add_fluid(make_float3(0.45f, 0.8f, 0.45f), make_float3(0.55f, 1.0f, 0.55f), make_float3(0.0f, -2.0f, 0.0f));
+		if (renderMode == 0)
+		{
+			simsystem->change_mass(0.02f);
+			simsystem->add_fluid(make_float3(0.45f, 0.8f, 0.45f), make_float3(0.55f, 1.0f, 0.55f), make_float3(0.0f, -2.0f, 0.0f));  // drop cube
+		}
+		else if (renderMode == 1)
+		{
+			simsystem->change_mass(0.02f);
+			simsystem->add_fluid(make_float3(0.5f, 0.8f, 0.5f), 0.1f, make_float3(0.0f, -2.0f, 0.0f));  // drop sphere
+		}
+		else if (renderMode == 2)
+		{
+			simsystem->change_mass(0.01f);
+			simsystem->add_fluid(make_float3(1.3f, 1.3f, 1.3f));  // a bunny drop
+		}
+		
+		
 }
 
 void init_sph_system(std::string config_path)
@@ -108,9 +126,11 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_fluid(make_float3(0.5f, 0.7f, 0.5f), 0.3f);  // a sphere drop from the air
 
-		simsystem->add_fluid(make_float3(0.6f, 0.8f, 0.6f), make_float3(0.7f, 1.0f, 0.7f), make_float3(0.0f, -2.0f, 0.0f));
+		//simsystem->add_fluid(make_float3(0.6f, 0.8f, 0.6f), make_float3(0.7f, 1.0f, 0.7f), make_float3(0.0f, -2.0f, 0.0f));
 
-		//simsystem->add_fluid(make_float3(4.5f, 4.5f, 4.5f));  // a bunny drop
+		//simsystem->add_fluid(make_float3(0.5f, 0.8f, 0.5f), 0.1f, make_float3(0.0f, -2.0f, 0.0f));
+
+		//simsystem->add_fluid(make_float3(1.3f, 1.3f, 1.3f));  // a bunny drop
 
 		//simsystem->add_fluid(make_float3(1.5f, 1.5f, 1.5f));  // a bunny drop
 		//FluidSim::Cube *cube = new FluidSim::Cube({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z },
@@ -261,6 +281,13 @@ int main() {
 		}
 
 		glfwSetMouseButtonCallback(g_window, mouse_button_callback);
+
+		if (glfwGetKey(g_window, GLFW_KEY_1)) {
+			renderMode = 1;
+		}
+		if (glfwGetKey(g_window, GLFW_KEY_2)) {
+			renderMode = 2;
+		}
 
 		// render skybox
 		skybox_shader.use();

@@ -1,18 +1,2 @@
-﻿  main_gpu_glfw.cpp
-d:\ironman\opencv\sources\modules\flann\include\opencv2\flann\logger.h(66): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0\ucrt\stdio.h(207): note: see declaration of 'fopen'
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(231): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(298): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(302): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(306): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(310): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(314): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(318): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(322): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(328): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(334): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(341): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(348): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp(354): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-     Creating library D:/Ironman/FluidSim_SPH/build_gpu/Release/dambreak_cuda_glfw.lib and object D:/Ironman/FluidSim_SPH/build_gpu/Release/dambreak_cuda_glfw.exp
+﻿     Creating library D:/Ironman/FluidSim_SPH/build_gpu/Release/dambreak_cuda_glfw.lib and object D:/Ironman/FluidSim_SPH/build_gpu/Release/dambreak_cuda_glfw.exp
   dambreak_cuda_glfw.vcxproj -> D:\Ironman\FluidSim_SPH\build_gpu\Release\dambreak_cuda_glfw.exe

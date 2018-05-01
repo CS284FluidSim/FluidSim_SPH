@@ -322,6 +322,8 @@ namespace FluidSim {
 
 		__host__
 			void SimulateSystem::start() {
+			if (sys_running_)
+				return;
 			sys_running_ = true;
 			cudaMemcpy(dev_particles_, particles_, sys_param_->num_particles * sizeof(Particle), cudaMemcpyHostToDevice);
 			cudaMemcpy(dev_sys_param_, sys_param_, sizeof(SysParam), cudaMemcpyHostToDevice);
@@ -382,19 +384,22 @@ namespace FluidSim {
 		}
 
 		__host__
-			void SimulateSystem::add_fluid(const float3 &sphere_pos, const float &radius)
+			void SimulateSystem::add_fluid(const float3 &sphere_pos, const float &radius, float3 velocity)
 		{
 			float3 pos;
 			float3 vel;
 
-			vel.x = 0.f;
+			/*vel.x = 0.f;
 			vel.y = 0.f;
-			vel.z = 0.f;
+			vel.z = 0.f;*/
+			vel = velocity;
+
+			float r = radius * sys_param_->world_size.y;
 
 			// calculate the bounding box of sphere
 			float3 pos_origin = sphere_pos * sys_param_->world_size;
-			float3 pos_min = pos_origin - make_float3(radius, radius, radius);
-			float3 pos_max = pos_origin + make_float3(radius, radius, radius);
+			float3 pos_min = pos_origin - make_float3(r, r, r);
+			float3 pos_max = pos_origin + make_float3(r, r, r);
 
 			if (pos_min.x < 0.f || pos_min.y < 0.f || pos_min.z < 0.f)
 			{
@@ -411,14 +416,16 @@ namespace FluidSim {
 				{
 					for (pos.z = pos_min.z; pos.z <= pos_max.z; pos.z += (sys_param_->h*0.5f))
 					{
-						if (length(pos - pos_origin) <= radius)
+						if (length(pos - pos_origin) <= r)
 						{
 							add_particle(pos, vel);
 						}
 					}
 				}
 			}
-
+			cudaMemcpy(dev_particles_, particles_, sys_param_->num_particles * sizeof(Particle), cudaMemcpyHostToDevice);
+			cudaMemcpy(dev_sys_param_, sys_param_, sizeof(SysParam), cudaMemcpyHostToDevice);
+			marchingCube_->init(sys_param_->num_particles);
 		}
 
 		__host__
@@ -456,14 +463,18 @@ namespace FluidSim {
 						coord = stof(line.substr(0, line.length()));
 						tmp.push_back(coord);
 					}
-					pos.x = tmp[0] * scale_const.x + 1.5f;
-					pos.y = tmp[1] * scale_const.y;
-					pos.z = tmp[2] * scale_const.z + 0.4f;
+					pos.x = tmp[0] * scale_const.x + 0.5f * sys_param_->world_size.x;
+					pos.y = tmp[1] * scale_const.y + 0.32f * sys_param_->world_size.y;
+					pos.z = tmp[2] * scale_const.z + 0.5f * sys_param_->world_size.z;
 					if (pos.x > 0.f && pos.x < sys_param_->world_size.x && pos.y > 0.f && pos.y < sys_param_->world_size.y && pos.z > 0.f && pos.z < sys_param_->world_size.z)
 						add_particle(pos, vel);
 					
 				}
 				myfile.close();
+
+				cudaMemcpy(dev_particles_, particles_, sys_param_->num_particles * sizeof(Particle), cudaMemcpyHostToDevice);
+				cudaMemcpy(dev_sys_param_, sys_param_, sizeof(SysParam), cudaMemcpyHostToDevice);
+				marchingCube_->init(sys_param_->num_particles);
 			}
 			else
 			{

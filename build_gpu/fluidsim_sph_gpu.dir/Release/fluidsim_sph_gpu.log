@@ -1,14 +1,14 @@
 ﻿  Building NVCC (Device) object CMakeFiles/fluidsim_sph_gpu.dir/src/gpu/Release/fluidsim_sph_gpu_generated_fluidsim_system.cu.obj
   fluidsim_system.cu
-D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(781): warning : variable "rel_vel" was declared but never referenced
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(792): warning : variable "rel_vel" was declared but never referenced
   
-D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(781): warning : variable "rel_vel" was declared but never referenced
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(792): warning : variable "rel_vel" was declared but never referenced
   
   fluidsim_system.cu
 D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(277): warning C4244: 'argument': conversion from 'float' to 'unsigned int', possible loss of data
-D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(590): warning C4018: '<': signed/unsigned mismatch
-D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(595): warning C4305: '=': truncation from 'double' to 'float'
-D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(597): warning C4305: '=': truncation from 'double' to 'float'
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(601): warning C4018: '<': signed/unsigned mismatch
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(606): warning C4305: '=': truncation from 'double' to 'float'
+D:/Ironman/FluidSim_SPH/src/gpu/fluidsim_system.cu(608): warning C4305: '=': truncation from 'double' to 'float'
 fluidsim_gl_utils.obj : warning LNK4006: stbi_load already defined in stb_image.obj; second definition ignored
 fluidsim_gl_utils.obj : warning LNK4006: stbi_load_from_memory already defined in stb_image.obj; second definition ignored
 fluidsim_gl_utils.obj : warning LNK4006: stbi_load_from_callbacks already defined in stb_image.obj; second definition ignored
