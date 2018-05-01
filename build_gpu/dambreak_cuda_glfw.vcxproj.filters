@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\Ironman\FluidSim_SPH\examples\gpu\main_gpu_glfw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Ironman\FluidSim_SPH\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{24E9D3C2-107B-38B6-9C94-D1CF6491CF6B}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

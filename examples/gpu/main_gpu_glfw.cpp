@@ -29,12 +29,18 @@ mat4 proj_mat;
 vec3 cam_pos(1.0f, 2.0f, 3.0f);
 
 // keep track of window size for things like the viewport and the mouse cursor
-int g_gl_width = 1600;
-int g_gl_height = 1600;
+int g_gl_width = 800;
+int g_gl_height = 800;
 GLFWwindow *g_window = NULL;
 
 // render mode
 int render_mode = 0;
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+		simsystem->add_fluid(make_float3(0.45f, 0.8f, 0.45f), make_float3(0.55f, 1.0f, 0.55f), make_float3(0.0f, -2.0f, 0.0f));
+}
 
 void init_sph_system(std::string config_path)
 {
@@ -105,13 +111,15 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
 
-		simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
+		//simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
 
 		//simsystem->add_cube_fluid(make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f, 0.2f, 1.0f), gap);
 
 		//simsystem->add_fluid(make_float3(0.2f, 0.5f, 0.1f), make_float3(0.7f, 0.9f, 0.9f));  // a cube drop from the air
 
 		//simsystem->add_fluid(make_float3(0.5f, 0.7f, 0.5f), 0.3f);  // a sphere drop from the air
+
+		simsystem->add_fluid(make_float3(0.6f, 0.8f, 0.6f), make_float3(0.7f, 1.0f, 0.7f), make_float3(0.0f, -2.0f, 0.0f));
 
 		//simsystem->add_fluid(make_float3(4.5f, 4.5f, 4.5f));  // a bunny drop
 
@@ -282,17 +290,27 @@ int main() {
 		// run simulation
 		if (simsystem->is_running())
 		{
+			
 			simsystem->animation();
 			//diffuse_shader.use();
 			//diffuse_shader.set_uniform_matrix4fv("M", model_mat.m);
 			//simsystem->render_particles();
-			simsystem->render_static_object();
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_texture);
 			water_shader.use();
 			water_shader.set_uniform_matrix4fv("M", model_mat.m);
 			simsystem->render_surface(FluidSim::gpu::MarchingCube::RenderMode::TRI);
+			simsystem->render_static_object();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_texture);
 		}
+
+		glfwSetMouseButtonCallback(g_window, mouse_button_callback);
+
+		// render skybox
+		skybox_shader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_texture);
+		glBindVertexArray(cube_vao);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// update other events like input handling
 		glfwPollEvents();

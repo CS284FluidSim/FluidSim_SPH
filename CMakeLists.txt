@@ -15,10 +15,11 @@ include_directories(${CMAKE_SOURCE_DIR}/include/gpu)
 find_package(CUDA REQUIRED)
 SET(SOURCE
     ${CMAKE_SOURCE_DIR}/src/gpu/fluidsim_system.cu
+    ${CMAKE_SOURCE_DIR}/src/gpu/fluidsim_pci_system.cu
     ${CMAKE_SOURCE_DIR}/src/gpu/fluidsim_marchingcube.cu
     ${CMAKE_SOURCE_DIR}/src/fluidsim_marchingcube.cpp
     ${CMAKE_SOURCE_DIR}/src/fluidsim_timer.cpp
-	${CMAKE_SOURCE_DIR}/src/fluidsim_scene_object.cpp
+    ${CMAKE_SOURCE_DIR}/src/fluidsim_scene_object.cpp
     ${CMAKE_SOURCE_DIR}/src/fluidsim_gl_utils.cpp
 	${CMAKE_SOURCE_DIR}/src/fluidsim_shader.cpp
 	${CMAKE_SOURCE_DIR}/common/maths_funcs.cpp
@@ -27,7 +28,9 @@ SET(SOURCE
 )
 SET(HEADERS
 	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_system.cuh
+	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_pci_system.cuh
 	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_particle.cuh
+	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_pci_particle.cuh
 	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_marchingcube.cuh
 	${CMAKE_SOURCE_DIR}/include/gpu/fluidsim_marchingcube_param.cuh
 	${CMAKE_SOURCE_DIR}/include/fluidsim_timer.h

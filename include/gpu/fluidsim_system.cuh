@@ -56,6 +56,14 @@ namespace FluidSim {
 
 			float3 sim_ratio;
 			float3 sim_origin;
+
+			// parameters used for PCISPH
+			int minIteration;
+			int maxIteration;
+			float eta;
+			float threshold;
+			float delta;
+			float maxDensVariance;
 		};
 
 		class Object 
@@ -73,6 +81,8 @@ namespace FluidSim {
 		class SimulateSystem {
 		public:
 			__host__
+				SimulateSystem();
+			__host__
 				SimulateSystem(float3 world_size, float3 sim_ratio, float3 world_origin,
 					int max_particles = 500000, float h = 0.04f, float mass = 0.02f, float3 gravity = {0.f,-9.8f,0.f}, float bound_damping=-0.5f,
 					float rest_dens = 1000.f, float gas_const=1.f, float visc = 6.5f, float timestep = 0.002f, float surf_norm=3.f, float surf_coef=0.2f);
@@ -81,7 +91,7 @@ namespace FluidSim {
 			__host__
 				void add_cube_fluid(const float3 &pos_min, const float3 &pos_max, const float gap);
 			__host__
-				void add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max); // add cude fluid
+				void add_fluid(const float3 &cube_pos_min, const float3 &cube_pos_max, float3 velocity = {0.0f, 0.0f, 0.0f}); // add cude fluid
 			__host__
 				void add_fluid(const float3 &sphere_pos, const float &radius);  // add sphere fluid
 			__host__
@@ -122,7 +132,7 @@ namespace FluidSim {
 				return particles_;
 			}
 
-		private:
+		protected:
 			__host__
 				void add_particle(const float3 &pos, const float3 &vel);
 			__host__
@@ -134,7 +144,7 @@ namespace FluidSim {
 			__host__
 				void integrate();
 
-		private:
+		protected:
 			__host__
 				uint calc_block_size(uint num_element, uint num_thread)
 			{
@@ -148,7 +158,7 @@ namespace FluidSim {
 				num_blocks = calc_block_size(num_particle, num_threads);
 			}
 
-		private:
+		protected:
 			bool sys_running_;
 
 			MarchingCube *marchingCube_;
