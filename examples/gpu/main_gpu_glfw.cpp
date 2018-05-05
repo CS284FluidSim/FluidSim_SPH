@@ -49,7 +49,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	{
 		if (primitive_mode == 0)
 		{
-			simsystem->add_fluid(make_float3(0.45f, 0.8f, 0.45f), make_float3(0.55f, 1.0f, 0.55f), make_float3(0.0f, -2.0f, 0.0f));  // drop cube
+			simsystem->add_fluid(make_float3(0.45f, 0.8f, 0.45f), make_float3(0.55f, 0.9f, 0.55f), make_float3(0.0f, -2.0f, 0.0f));  // drop cube
 		}
 		else if (primitive_mode == 1)
 		{
@@ -135,7 +135,8 @@ void init_sph_system(std::string config_path)
 
 		//simsystem->add_cube_fluid(make_float3(0.5f, 0.5f, 0.5f), make_float3(0.6f, 0.6f, 0.6f));
 
-		simsystem->add_cube_fluid(make_float3(0.8f, 0.0f, 0.0f), make_float3(1.0f, 0.9f, 1.0f), gap);
+		simsystem->add_cube_fluid(make_float3(0.2f, 0.35f, 0.2f), make_float3(0.8f, 0.95f, 0.8f), gap);
+		//simsystem->add_cube_fluid(make_float3(0.0f, 0.0f, 0.0f), make_float3(0.2f, 0.5f, 1.0f), gap);
 
 		//simsystem->add_cube_fluid(make_float3(0.0f, 0.0f, 0.0f), make_float3(1.0f, 0.2f, 1.0f), gap);
 
@@ -156,17 +157,20 @@ void init_sph_system(std::string config_path)
 		//FluidSim::Cube *cube1 = new FluidSim::Cube({ 0.2f*world_size.x,0.4f*world_size.y,0.2f*world_size.z },
 		//{ 0.2f*world_size.x,0.8f*world_size.y,0.2f*world_size.z });
 		//cube1->set_shader(&diffuse_shader);
-		//FluidSim::Sphere *sphere = new FluidSim::Sphere({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 0.2f*world_size.z);
-		//sphere->set_shader(&diffuse_shader);
+		FluidSim::Sphere *sphere = new FluidSim::Sphere({ 0.4f*world_size.x,0.2f*world_size.y,0.5f*world_size.z }, 0.2f*world_size.z);
+		sphere->set_shader(&diffuse_shader);
 		// texture cube
 		//GLuint box_texture;
 		GLuint box_texture;
 		create_cube_map("../texture/cube/wood/", &box_texture);
 		GLuint frame_texture;
 		create_cube_map("../texture/cube/frame/", &frame_texture);
-		FluidSim::TexturedCube *tex_cube = new FluidSim::TexturedCube({ 0.5f*world_size.x,0.2f*world_size.y,0.5f*world_size.z },
-		{ 0.2f*world_size.x,0.4f*world_size.y,0.5f*world_size.z }, box_texture);
+
+		FluidSim::TexturedCube *tex_cube = new FluidSim::TexturedCube({ 0.7f*world_size.x,0.2f*world_size.y,0.5f*world_size.z },
+		{ 0.1f*world_size.x,0.4f*world_size.y,0.5f*world_size.z }, box_texture);
 		tex_cube->set_shader(&texcube_shader);
+
+
 		FluidSim::TexturedCube *bottomwall = new FluidSim::TexturedCube({ 0.5f*world_size.x,0.f,0.5f*world_size.z},
 		{ world_size.x, 0.01f, world_size.z}, frame_texture);
 		bottomwall->set_shader(&texcube_shader);
@@ -185,7 +189,8 @@ void init_sph_system(std::string config_path)
 		//simsystem->add_static_object(cube);
 		//simsystem->add_static_object(cube1);
 		
-		simsystem->add_static_object(tex_cube);
+		//simsystem->add_static_object(tex_cube);
+		//simsystem->add_static_object(sphere);
 		simsystem->add_static_object(bottomwall, false);
 		simsystem->add_static_object(backwall, false);
 		simsystem->add_static_object(leftwall, false);
@@ -193,8 +198,6 @@ void init_sph_system(std::string config_path)
 
 
 		// dambreak add cylinder
-
-
 	}
 }
 
@@ -349,11 +352,7 @@ int main() {
 		glfwSetMouseButtonCallback(g_window, mouse_button_callback);
 
 		if (glfwGetKey(g_window, GLFW_KEY_0)) {
-<<<<<<< HEAD
 			primitive_mode = 0;
-=======
-			renderMode = 0;
->>>>>>> 002f16a70055b9eb0871734b03defe19f0ae92ea
 		}
 		if (glfwGetKey(g_window, GLFW_KEY_1)) {
 			primitive_mode = 1;

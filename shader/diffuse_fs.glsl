@@ -21,7 +21,7 @@ void main () {
 
   vec3 dir_h = (dir_cam+dir_l)/length(dir_cam+dir_l);
 
-  float k_a=0.4,k_d=0.0;
+  float k_a=0.4,k_d=0.5;
   vec3 L = k_a * I_a + k_d * I_l/(r*r)*clamp(dot(dir_normal,dir_l),0.0,1.0);
 	frag_colour = vec4(L, 1.0);
 }

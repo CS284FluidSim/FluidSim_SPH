@@ -45,7 +45,7 @@ td > * {
 
 # CS 284A: Computer Graphics and Imaging, Spring 2018
 
-## Final Project Milestone:
+## Final Project Report & Video:
 ## Accelerating Fluid Simulation
 
 #### Chu-Ming Chang 3033157870, KUAN LU 3033156752, Rongbing Zhou 3033157519
@@ -68,14 +68,14 @@ td > * {
 In this project, we are trying to accelerate fluid simulation algorithm based on Position Based Dynamics (PBD) using GPU. Smoothed particle hydrodynamics (SPH) will be used for simulating the fluid as particles, and surfaces will be reconstructed and rendered from particles.
 
 
-## Part I: Milestone paper
+## Part I: Final paper
 
-<center><a href="https://drive.google.com/open?id=1dcOBwFy7YcMsqWZmM1p8ObM3ptKFjsYw">Milestone Paper</a></center>
+<center><a href="https://drive.google.com/open?id=1dcOBwFy7YcMsqWZmM1p8ObM3ptKFjsYw">Final Paper</a></center>
 
-## Part II: Milestone Video
+## Part II: Final Video
 
-<center><a href="https://youtu.be/WxrsHBht8nI">Milestone Video</a></center>
+<center><a href="https://youtu.be/RmtwyVo1VRI">Final Video</a></center>
 
-## Part III: Milestone Slides
+## Part III: Final Slides
 
-<center><a href="https://drive.google.com/open?id=1BuE1BcjL6xKZ_YmSb4Dj2-20mUw6oTGRxn5bRB6QUDg">Milestone Slides</a></center>
+<center><a href="https://drive.google.com/open?id=1Yb2t_hEkJDvkr7hzYsYI_7kqNdHYXrCgAtIGCBB1DzM">Final Slides</a></center>

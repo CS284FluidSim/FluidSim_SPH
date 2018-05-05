@@ -176,7 +176,7 @@ namespace FluidSim {
 			if (dev_occupied[cell_index] == 1)
 			{
 				p->vel = p->vel*dev_sys_param->bound_damping;
-				p->pos = p->pos+p->vel*0.002;
+				p->pos = p->pos+p->vel*0.004;
 			}
 
 			if (p->pos.x > dev_sys_param->world_size.x - BOUNDARY)
