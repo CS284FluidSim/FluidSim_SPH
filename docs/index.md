@@ -70,7 +70,7 @@ In this project, we are trying to accelerate fluid simulation algorithm based on
 
 ## Part I: Final paper
 
-<center><a href="https://drive.google.com/open?id=1dcOBwFy7YcMsqWZmM1p8ObM3ptKFjsYw">Final Paper</a></center>
+<center><a href="https://drive.google.com/open?id=1cvC9ayg7GIrMJmsD5GI2yC0DPCEzjdu3">Final Paper</a></center>
 
 ## Part II: Final Video
 
