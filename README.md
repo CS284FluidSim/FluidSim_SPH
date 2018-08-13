@@ -1,6 +1,8 @@
 # CS 284A: Computer Graphics and Imaging, Spring 2018
 
-## Final Project Proposal:
+## Final Deliverable:
+https://cs284fluidsim.github.io/FluidSim_SPH/
+
 ## Accelerating Fluid Simulation
 
 #### Chu-Ming Chang 3033157870, KUAN LU 3033156752, Rongbing Zhou 3033157519
